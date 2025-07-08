@@ -3,6 +3,7 @@ import React from 'react';
 import TokenDistributionChart from '../components/TokenDistributionChart';
 import PerformanceChart from '../components/PerformanceChart';
 import VolumeChart from '../components/VolumeChart';
+import TradingChartContainer from '../components/TradingChartContainer';
 import VotingPanel from '../components/VotingPanel';
 import PitchDeck from '../components/PitchDeck';
 import HowItWorks from '../components/HowItWorks';
@@ -31,11 +32,16 @@ const Index = () => {
             <div className="grid lg:grid-cols-3 gap-6">
               {/* Left Column - Two charts stacked */}
               <div className="lg:col-span-2 space-y-6">
-                {/* Strategy Performance Chart */}
+                {/* Trading Chart */}
                 <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Strategy Performance</h3>
-                  <div className="h-64">
-                    <PerformanceChart />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">BONK/USDC Live Trading Chart</h3>
+                  <div className="h-80">
+                    <TradingChartContainer
+                      solanaTrackerApiKey="ab5915df-4f94-449a-96c5-c37cbc92ef47"
+                      heliusApiKey="b651027b-45c5-47ce-95a4-163a4f6127a7"
+                      height={300}
+                      showControls={true}
+                    />
                   </div>
                 </div>
                 

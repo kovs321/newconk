@@ -211,8 +211,13 @@ const InteractiveChart: React.FC = () => {
 
   // Initialize chart with area series (only once)
   useEffect(() => {
-    if (!chartContainerRef.current) return;
+    if (!chartContainerRef.current) {
+      console.log('Chart container not ready');
+      return;
+    }
 
+    console.log('Initializing chart...');
+    
     try {
       const chartOptions = { 
         layout: { 
@@ -257,18 +262,36 @@ const InteractiveChart: React.FC = () => {
         },
       };
 
+      console.log('Creating chart with container:', chartContainerRef.current);
+      console.log('Container dimensions:', chartContainerRef.current.clientWidth, 'x', chartContainerRef.current.clientHeight);
+      
       const chart = createChart(chartContainerRef.current, chartOptions);
+      console.log('Chart created successfully');
       
       const areaSeries = chart.addSeries(AreaSeries, { 
         lineColor: '#2962FF', 
         topColor: '#2962FF', 
         bottomColor: 'rgba(41, 98, 255, 0.28)' 
       });
+      console.log('Area series created successfully');
 
       chartRef.current = chart;
       seriesRef.current = areaSeries;
 
       console.log('Chart initialized, series ready:', !!seriesRef.current);
+      
+      // Force initial data load if data already exists
+      setTimeout(() => {
+        if (data.length > 0) {
+          console.log('Force setting initial data');
+          const formattedData = data.map(item => ({
+            time: item.time,
+            value: Number(item.value)
+          }));
+          areaSeries.setData(formattedData);
+          chart.timeScale().fitContent();
+        }
+      }, 100);
 
       // Handle resize
       const handleResize = () => {
@@ -301,17 +324,33 @@ const InteractiveChart: React.FC = () => {
   useEffect(() => {
     if (seriesRef.current && data.length > 0) {
       console.log('Setting data to chart:', data.length, 'points');
+      console.log('First few data points:', data.slice(0, 3));
       
-      const formattedData = data.map(item => ({
-        time: item.time,
-        value: Number(item.value)
-      }));
-      
-      seriesRef.current.setData(formattedData);
-      
-      if (chartRef.current) {
-        chartRef.current.timeScale().fitContent();
+      try {
+        const formattedData = data.map(item => ({
+          time: item.time,
+          value: Number(item.value)
+        }));
+        
+        console.log('Formatted data:', formattedData.slice(0, 3));
+        
+        seriesRef.current.setData(formattedData);
+        
+        if (chartRef.current) {
+          setTimeout(() => {
+            chartRef.current?.timeScale().fitContent();
+          }, 100);
+        }
+        
+        console.log('Chart data set successfully');
+      } catch (error) {
+        console.error('Error setting chart data:', error);
       }
+    } else {
+      console.log('Chart not ready:', {
+        seriesExists: !!seriesRef.current,
+        dataLength: data.length
+      });
     }
   }, [data]);
 

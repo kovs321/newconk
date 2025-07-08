@@ -6,143 +6,84 @@ interface ChartData {
   value: number;
 }
 
+interface TokenData {
+  mint: string;
+  name: string;
+  symbol: string;
+  color: string;
+  topColor: string;
+  bottomColor: string;
+  currentPrice: number | null;
+  priceDirection: 'up' | 'down' | null;
+  data: ChartData[];
+}
+
 const InteractiveChart: React.FC = () => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const seriesRef = useRef<ISeriesApi<'Area'> | null>(null);
+  const seriesRefs = useRef<{ [key: string]: ISeriesApi<'Area'> }>({});
   
-  const [data, setData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
-  const [previousPrice, setPreviousPrice] = useState<number | null>(null);
-  const [priceDirection, setPriceDirection] = useState<'up' | 'down' | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const TOKEN_MINT = '34VWJ7PPwcPpYEqTGJQXo8qaMJYoP8VKuBGHPG3ypump';
+  // 4 different tokens with different colors
+  const [tokens, setTokens] = useState<TokenData[]>([
+    {
+      mint: 'Dz9mQ9NzkBcCsuGPFJ3r1bS4wgqKMHBPiVuniW8Mbonk',
+      name: 'BONK Token 1',
+      symbol: 'BONK1',
+      color: '#2962FF',
+      topColor: '#2962FF',
+      bottomColor: 'rgba(41, 98, 255, 0.28)',
+      currentPrice: null,
+      priceDirection: null,
+      data: []
+    },
+    {
+      mint: '9wK8yN6iz1ie5kEJkvZCTxyN1x5sTdNfx8yeMY8Ebonk',
+      name: 'BONK Token 2',
+      symbol: 'BONK2',
+      color: '#FF6B35',
+      topColor: '#FF6B35',
+      bottomColor: 'rgba(255, 107, 53, 0.28)',
+      currentPrice: null,
+      priceDirection: null,
+      data: []
+    },
+    {
+      mint: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263',
+      name: 'BONK Token 3',
+      symbol: 'BONK3',
+      color: '#10B981',
+      topColor: '#10B981',
+      bottomColor: 'rgba(16, 185, 129, 0.28)',
+      currentPrice: null,
+      priceDirection: null,
+      data: []
+    },
+    {
+      mint: 'AtortPA9SVbkKmdzu5zg4jxgkR4howvPshorA9jYbonk',
+      name: 'BONK Token 4',
+      symbol: 'BONK4',
+      color: '#8B5CF6',
+      topColor: '#8B5CF6',
+      bottomColor: 'rgba(139, 92, 246, 0.28)',
+      currentPrice: null,
+      priceDirection: null,
+      data: []
+    }
+  ]);
+
   const SOLANA_TRACKER_API_KEY = 'ab5915df-4f94-449a-96c5-c37cbc92ef47';
   
   const updateIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const lastUpdateTimeRef = useRef<number>(0);
-
-  // Real-time updates via API polling
-  const startRealTimeUpdates = () => {
-    if (updateIntervalRef.current) {
-      clearInterval(updateIntervalRef.current);
-    }
-    
-    updateIntervalRef.current = setInterval(() => {
-      fetchLatestData();
-    }, 1000); // Update every second
-    
-    console.log('Started real-time updates (1 second interval)');
-  };
-
-  const stopRealTimeUpdates = () => {
-    if (updateIntervalRef.current) {
-      clearInterval(updateIntervalRef.current);
-      updateIntervalRef.current = null;
-    }
-    console.log('Stopped real-time updates');
-  };
-
-  const fetchLatestData = async () => {
-    if (isUpdating) return; // Prevent overlapping requests
-    
-    try {
-      setIsUpdating(true);
-      
-      // Get only the latest few data points to avoid reloading entire chart
-      const response = await fetch(
-        `https://data.solanatracker.io/chart/${TOKEN_MINT}?type=1m&limit=5`,
-        {
-          headers: {
-            'x-api-key': SOLANA_TRACKER_API_KEY,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.status}`);
-      }
-
-      const result = await response.json();
-      
-      if (result.oclhv && Array.isArray(result.oclhv)) {
-        const newData = result.oclhv
-          .filter((item: any) => item && item.time && item.close)
-          .map((item: any) => ({
-            time: item.time,
-            value: item.close,
-          }))
-          .sort((a, b) => a.time - b.time);
-
-        if (newData.length > 0) {
-          const latestPoint = newData[newData.length - 1];
-          
-          // Only update if we have newer data
-          if (latestPoint.time > lastUpdateTimeRef.current) {
-            lastUpdateTimeRef.current = latestPoint.time;
-            
-            // Update current price with direction
-            setCurrentPrice(prevPrice => {
-              if (prevPrice !== null) {
-                setPreviousPrice(prevPrice);
-                setPriceDirection(latestPoint.value > prevPrice ? 'up' : 'down');
-                // Reset direction after animation
-                setTimeout(() => setPriceDirection(null), 1000);
-              }
-              return latestPoint.value;
-            });
-            
-            // Update chart data without resetting zoom
-            setData(prevData => {
-              const existingTimes = new Set(prevData.map(item => item.time));
-              const newPoints = newData.filter(item => !existingTimes.has(item.time));
-              
-              if (newPoints.length > 0) {
-                console.log('Adding new points to chart:', newPoints.length);
-                
-                // Update chart with new points only
-                newPoints.forEach(point => {
-                  if (seriesRef.current) {
-                    console.log('Updating chart with point:', point);
-                    seriesRef.current.update(point);
-                  }
-                });
-                
-                // Keep the chart focused on recent data (last 6 hours)
-                if (chartRef.current && newPoints.length > 0) {
-                  const latestTime = newPoints[newPoints.length - 1].time;
-                  const sixHoursAgo = latestTime - (6 * 60 * 60);
-                  
-                  chartRef.current.timeScale().setVisibleRange({
-                    from: sixHoursAgo,
-                    to: latestTime + (30 * 60)
-                  });
-                }
-                
-                const updatedData = [...prevData, ...newPoints].sort((a, b) => a.time - b.time);
-                return updatedData;
-              }
-              return prevData;
-            });
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching latest data:', error);
-      // Don't show error for real-time updates to avoid spam
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-
-  // Generate simple sample data for area chart
-  const generateSampleData = (): ChartData[] => {
+  
+  // Generate sample data for each token with different price ranges
+  const generateSampleDataForToken = (tokenIndex: number): ChartData[] => {
     const data: ChartData[] = [];
-    let price = 0.000001174;
+    const basePrices = [0.000001174, 0.000002385, 0.000000956, 0.000001847];
+    let price = basePrices[tokenIndex] || 0.000001174;
     const now = Math.floor(Date.now() / 1000);
     
     for (let i = 100; i >= 0; i--) {
@@ -156,19 +97,15 @@ const InteractiveChart: React.FC = () => {
       });
     }
     
-    console.log('Generated sample data:', data.slice(0, 5));
     return data;
   };
 
-  // Fetch data from API
-  const fetchData = async () => {
+  // Fetch data for a specific token
+  const fetchTokenData = async (tokenMint: string): Promise<ChartData[]> => {
     try {
-      setLoading(true);
-      setError(null);
-
-      console.log('Fetching data from Solana Tracker API...');
+      console.log(`Fetching data for token: ${tokenMint}`);
       const response = await fetch(
-        `https://data.solanatracker.io/chart/${TOKEN_MINT}?type=1m&limit=100`,
+        `https://data.solanatracker.io/chart/${tokenMint}?type=1m&limit=100`,
         {
           headers: {
             'x-api-key': SOLANA_TRACKER_API_KEY,
@@ -181,52 +118,144 @@ const InteractiveChart: React.FC = () => {
       }
 
       const result = await response.json();
-      console.log('API Response:', result);
       
       let chartData: ChartData[] = [];
       
       if (result.oclhv && Array.isArray(result.oclhv)) {
         chartData = result.oclhv
-          .filter((item: any) => item && item.time && item.close) // Filter out invalid data
+          .filter((item: any) => item && item.time && item.close)
           .map((item: any) => ({
             time: item.time,
             value: item.close,
           }))
-          .sort((a, b) => a.time - b.time); // Sort by time
-        console.log('Processed chart data:', chartData);
-        console.log('Sample data points:', chartData.slice(0, 5));
+          .sort((a, b) => a.time - b.time);
       }
 
-      // If no data or very little data, use sample data
-      if (chartData.length < 5) {
-        console.log('Using sample data due to insufficient API data');
-        chartData = generateSampleData();
-      }
-
-      setData(chartData);
-      if (chartData.length > 0) {
-        setCurrentPrice(chartData[chartData.length - 1].value);
-      }
+      return chartData;
     } catch (err) {
-      console.error('Error fetching data:', err);
+      console.error(`Error fetching data for token ${tokenMint}:`, err);
+      return [];
+    }
+  };
+
+  // Fetch data for all tokens
+  const fetchAllTokensData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      console.log('Fetching data for all tokens...');
+      
+      const tokenDataPromises = tokens.map(async (token, index) => {
+        const apiData = await fetchTokenData(token.mint);
+        
+        // If no API data, use sample data
+        const finalData = apiData.length > 5 ? apiData : generateSampleDataForToken(index);
+        
+        return {
+          ...token,
+          data: finalData,
+          currentPrice: finalData.length > 0 ? finalData[finalData.length - 1].value : null
+        };
+      });
+
+      const updatedTokens = await Promise.all(tokenDataPromises);
+      setTokens(updatedTokens);
+      
+    } catch (err) {
+      console.error('Error fetching all tokens data:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch data');
       
-      // Use sample data on error
-      const sampleData = generateSampleData();
-      setData(sampleData);
-      setCurrentPrice(sampleData[sampleData.length - 1].value);
+      // Use sample data for all tokens on error
+      const updatedTokens = tokens.map((token, index) => ({
+        ...token,
+        data: generateSampleDataForToken(index),
+        currentPrice: generateSampleDataForToken(index).slice(-1)[0]?.value || null
+      }));
+      
+      setTokens(updatedTokens);
     } finally {
       setLoading(false);
     }
   };
 
-  // Initialize chart when data is ready
+  // Real-time updates for all tokens
+  const startRealTimeUpdates = () => {
+    if (updateIntervalRef.current) {
+      clearInterval(updateIntervalRef.current);
+    }
+    
+    updateIntervalRef.current = setInterval(() => {
+      fetchLatestDataForAllTokens();
+    }, 5000); // Update every 5 seconds for multiple tokens
+    
+    console.log('Started real-time updates for all tokens (5 second interval)');
+  };
+
+  const stopRealTimeUpdates = () => {
+    if (updateIntervalRef.current) {
+      clearInterval(updateIntervalRef.current);
+      updateIntervalRef.current = null;
+    }
+    console.log('Stopped real-time updates');
+  };
+
+  const fetchLatestDataForAllTokens = async () => {
+    if (isUpdating) return;
+    
+    try {
+      setIsUpdating(true);
+      
+      const updatedTokens = await Promise.all(
+        tokens.map(async (token) => {
+          const latestData = await fetchTokenData(token.mint);
+          
+          if (latestData.length > 0) {
+            const latestPoint = latestData[latestData.length - 1];
+            const previousPrice = token.currentPrice;
+            
+            // Update chart series
+            const series = seriesRefs.current[token.mint];
+            if (series) {
+              series.update(latestPoint);
+            }
+            
+            return {
+              ...token,
+              currentPrice: latestPoint.value,
+              priceDirection: previousPrice ? 
+                (latestPoint.value > previousPrice ? 'up' : 'down') : null
+            };
+          }
+          
+          return token;
+        })
+      );
+      
+      setTokens(updatedTokens);
+      
+      // Reset price direction after animation
+      setTimeout(() => {
+        setTokens(prev => prev.map(token => ({
+          ...token,
+          priceDirection: null
+        })));
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Error fetching latest data for all tokens:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Initialize chart when tokens data is ready
   useEffect(() => {
-    if (!chartContainerRef.current || data.length === 0) {
+    if (!chartContainerRef.current || tokens.length === 0 || tokens.every(token => token.data.length === 0)) {
       return;
     }
 
-    console.log('Initializing chart with data...');
+    console.log('Initializing multi-token chart...');
     
     try {
       const chart = createChart(chartContainerRef.current, {
@@ -263,42 +292,51 @@ const InteractiveChart: React.FC = () => {
         },
       });
       
-      const areaSeries = chart.addSeries(AreaSeries, { 
-        lineColor: '#2962FF', 
-        topColor: '#2962FF', 
-        bottomColor: 'rgba(41, 98, 255, 0.28)',
-        priceFormat: {
-          type: 'price',
-          precision: 9,
-          minMove: 0.000000001,
-        },
-        priceLineVisible: true,
-        lastValueVisible: true,
-      });
+      // Create series for each token
+      const newSeriesRefs: { [key: string]: ISeriesApi<'Area'> } = {};
+      
+      tokens.forEach((token) => {
+        if (token.data.length > 0) {
+          const areaSeries = chart.addSeries(AreaSeries, { 
+            lineColor: token.color, 
+            topColor: token.topColor, 
+            bottomColor: token.bottomColor,
+            priceFormat: {
+              type: 'price',
+              precision: 9,
+              minMove: 0.000000001,
+            },
+            priceLineVisible: false, // Hide individual price lines to avoid clutter
+            lastValueVisible: true,
+          });
 
-      // Set data immediately
-      const formattedData = data.map(item => ({
-        time: item.time,
-        value: Number(item.value)
-      }));
+          // Set data for this token
+          const formattedData = token.data.map(item => ({
+            time: item.time,
+            value: Number(item.value)
+          }));
+          
+          areaSeries.setData(formattedData);
+          newSeriesRefs[token.mint] = areaSeries;
+        }
+      });
       
-      areaSeries.setData(formattedData);
-      
-      // Set initial zoom to show last 6 hours instead of full dataset
-      if (formattedData.length > 0) {
-        const lastTime = formattedData[formattedData.length - 1].time;
-        const sixHoursAgo = lastTime - (6 * 60 * 60); // 6 hours in seconds
+      // Set initial zoom to show last 6 hours
+      const allData = tokens.flatMap(token => token.data);
+      if (allData.length > 0) {
+        const lastTime = Math.max(...allData.map(item => item.time));
+        const sixHoursAgo = lastTime - (6 * 60 * 60);
         
         chart.timeScale().setVisibleRange({
           from: sixHoursAgo,
-          to: lastTime + (30 * 60) // Add 30 minutes buffer
+          to: lastTime + (30 * 60)
         });
       }
 
       chartRef.current = chart;
-      seriesRef.current = areaSeries;
+      seriesRefs.current = newSeriesRefs;
 
-      console.log('Chart initialized and data set successfully');
+      console.log('Multi-token chart initialized successfully');
 
       // Handle resize
       const handleResize = () => {
@@ -317,31 +355,20 @@ const InteractiveChart: React.FC = () => {
         if (chartRef.current) {
           chartRef.current.remove();
           chartRef.current = null;
-          seriesRef.current = null;
+          seriesRefs.current = {};
         }
       };
     } catch (error) {
       console.error('Error initializing chart:', error);
       setError('Failed to initialize chart');
     }
-  }, [data]); // Initialize when data changes
+  }, [tokens]);
 
   // Load data on mount
   useEffect(() => {
-    // Temporary: Force sample data for testing
-    console.log('Loading sample data for testing...');
-    const sampleData = generateSampleData();
-    setData(sampleData);
-    setCurrentPrice(sampleData[sampleData.length - 1].value);
-    setLoading(false);
-    
-    // Also fetch real data
-    fetchData();
-    
-    // Start real-time updates
+    fetchAllTokensData();
     startRealTimeUpdates();
     
-    // Cleanup on unmount
     return () => {
       stopRealTimeUpdates();
     };
@@ -376,32 +403,44 @@ const InteractiveChart: React.FC = () => {
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-black text-gray-900">Live Token Chart</h3>
-            <p className="text-sm text-gray-600">Real-time price updates via WebSocket</p>
+            <h3 className="text-lg font-black text-gray-900">Multi-Token Chart</h3>
+            <p className="text-sm text-gray-600">4 BONK tokens with real-time price updates</p>
           </div>
-          <div className="flex items-center space-x-6">
-            <div className="text-right">
-              <div className="text-xs text-gray-500 mb-1">Current Price</div>
-              <div className={`text-2xl font-bold transition-all duration-300 ${
-                currentPrice ? 
-                  priceDirection === 'up' ? 'text-green-500 transform scale-110' :
-                  priceDirection === 'down' ? 'text-red-500 transform scale-110' :
-                  'text-blue-600' 
-                : 'text-gray-400'
-              }`}>
-                ${formatPrice(currentPrice)}
-                {priceDirection && (
-                  <span className="ml-1 text-sm">
-                    {priceDirection === 'up' ? '↗' : '↘'}
-                  </span>
-                )}
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
+            <span className="text-sm font-medium text-gray-600">Live</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Token Legend */}
+      <div className="px-4 py-3 border-b border-gray-100">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {tokens.map((token) => (
+            <div key={token.mint} className="flex items-center space-x-2">
+              <div 
+                className="w-4 h-4 rounded-full" 
+                style={{ backgroundColor: token.color }}
+              ></div>
+              <div className="min-w-0">
+                <div className="text-sm font-medium text-gray-900 truncate">{token.symbol}</div>
+                <div className={`text-xs font-mono transition-all duration-300 ${
+                  token.currentPrice ? 
+                    token.priceDirection === 'up' ? 'text-green-500 transform scale-110' :
+                    token.priceDirection === 'down' ? 'text-red-500 transform scale-110' :
+                    'text-gray-600' 
+                  : 'text-gray-400'
+                }`}>
+                  ${formatPrice(token.currentPrice)}
+                  {token.priceDirection && (
+                    <span className="ml-1">
+                      {token.priceDirection === 'up' ? '↗' : '↘'}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
-              <span className="text-sm font-medium text-gray-600">Live</span>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 

@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { VotingToken } from '../lib/supabase';
 import { 
-  fetchVotingTokens, 
+  fetchVotableTokens, 
   submitVote, 
   getUserVotedTokens, 
-  subscribeToVotingUpdates
-} from '../lib/voting-service';
-
+  subscribeToVotingUpdates,
+  getUserByWallet
+} from '../lib/voting-service-supabase';
+import { Database } from '@/integrations/supabase/types';
 import { useWallet } from '@solana/wallet-adapter-react';
 
-interface VotingItem extends VotingToken {
+type VotableToken = Database['public']['Tables']['votable_tokens']['Row'];
+
+interface VotingItem extends VotableToken {
   userVoted?: boolean;
 }
 
@@ -29,16 +31,21 @@ const VotingPanel = () => {
       try {
         setLoading(true);
         setError(null);
-        console.log('Loading voting data from localStorage...');
+        console.log('Loading voting data from Supabase...');
         
-        // Fetch tokens and user votes simultaneously
-        const walletAddress = publicKey?.toString()
-        console.log('Fetching from localStorage...');
-        const [tokens, userVotes] = await Promise.all([
-          fetchVotingTokens(),
-          getUserVotedTokens(walletAddress)
-        ]);
-        console.log('Tokens from localStorage:', tokens);
+        // Fetch tokens first
+        const tokens = await fetchVotableTokens();
+        console.log('Tokens from Supabase:', tokens);
+        
+        // If wallet is connected, get user's votes
+        let userVotes: string[] = [];
+        if (connected && publicKey) {
+          const walletAddress = publicKey.toString();
+          const user = await getUserByWallet(walletAddress);
+          if (user) {
+            userVotes = await getUserVotedTokens(user.id);
+          }
+        }
         
         // Mark tokens that user has voted for
         const tokensWithVoteStatus = tokens.map(token => ({
@@ -61,11 +68,17 @@ const VotingPanel = () => {
 
   // Set up real-time subscription
   useEffect(() => {
-    const subscription = subscribeToVotingUpdates(async (updatedTokens) => {
+    const channel = subscribeToVotingUpdates(async (updatedTokens) => {
       try {
         // Refresh user votes to maintain accurate state
-        const walletAddress = publicKey?.toString()
-        const userVotes = await getUserVotedTokens(walletAddress);
+        let userVotes: string[] = [];
+        if (connected && publicKey) {
+          const walletAddress = publicKey.toString();
+          const user = await getUserByWallet(walletAddress);
+          if (user) {
+            userVotes = await getUserVotedTokens(user.id);
+          }
+        }
         
         const tokensWithVoteStatus = updatedTokens.map(token => ({
           ...token,
@@ -80,11 +93,9 @@ const VotingPanel = () => {
     });
 
     return () => {
-      if (subscription) {
-        subscription.unsubscribe();
-      }
+      channel.unsubscribe();
     };
-  }, [publicKey]);
+  }, [connected, publicKey]);
 
   const handleVote = async (tokenId: string) => {
     if (votingStates[tokenId]) return; // Prevent double clicking
@@ -103,8 +114,8 @@ const VotingPanel = () => {
       
       console.log('🗳️ Voting attempt:', { tokenId, walletAddress: walletAddress.substring(0, 8) + '...' });
       
-      // 2. Submit vote with wallet address
-      await submitVote(tokenId, walletAddress);
+      // 2. Submit vote with wallet address (Supabase will handle user creation/authentication)
+      await submitVote(walletAddress, tokenId);
       
       // 3. Update local state immediately for better UX
       setVotingItems(prev => 
@@ -253,7 +264,7 @@ const VotingPanel = () => {
 
       {/* Footer */}
       <div className="text-center text-xs text-gray-500">
-        One vote per wallet address per token • Votes stored locally
+        One vote per wallet address per token • Real-time voting powered by Supabase
       </div>
     </div>
   );

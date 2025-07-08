@@ -14,7 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      users: {
+        Row: {
+          id: string
+          wallet_address: string
+          created_at: string
+          last_login: string
+        }
+        Insert: {
+          id?: string
+          wallet_address: string
+          created_at?: string
+          last_login?: string
+        }
+        Update: {
+          id?: string
+          wallet_address?: string
+          created_at?: string
+          last_login?: string
+        }
+      }
+      votable_tokens: {
+        Row: {
+          id: string
+          name: string
+          ticker: string
+          contract_address: string
+          image_url: string | null
+          votes: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          ticker: string
+          contract_address: string
+          image_url?: string | null
+          votes?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          ticker?: string
+          contract_address?: string
+          image_url?: string | null
+          votes?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      user_votes: {
+        Row: {
+          id: string
+          user_id: string
+          token_id: string
+          voted_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          token_id: string
+          voted_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          token_id?: string
+          voted_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never

@@ -3,7 +3,7 @@ import React from 'react';
 import TokenDistributionChart from '../components/TokenDistributionChart';
 import PerformanceChart from '../components/PerformanceChart';
 import VolumeChart from '../components/VolumeChart';
-import WorkingTradingChart from '../components/WorkingTradingChart';
+import ProTradingChart from '../components/ProTradingChart';
 import VotingPanel from '../components/VotingPanel';
 import PitchDeck from '../components/PitchDeck';
 import HowItWorks from '../components/HowItWorks';
@@ -34,8 +34,7 @@ const Index = () => {
               <div className="lg:col-span-2 space-y-6">
                 {/* Trading Chart */}
                 <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Live Token Chart</h3>
-                  <WorkingTradingChart />
+                  <ProTradingChart />
                 </div>
                 
                 {/* Volume Chart */}

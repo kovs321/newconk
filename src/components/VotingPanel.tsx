@@ -4,7 +4,8 @@ import {
   fetchVotingTokens, 
   submitVote, 
   getUserVotedTokens, 
-  subscribeToVotingUpdates 
+  subscribeToVotingUpdates,
+  testDatabaseConnection 
 } from '../lib/voting-service';
 
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -30,6 +31,9 @@ const VotingPanel = () => {
         setLoading(true);
         setError(null);
         console.log('Loading voting data... Supabase configured:', isSupabaseConfigured);
+        
+        // Test database connection first
+        await testDatabaseConnection();
         
         // If Supabase is not configured, show sample data with real metadata
         if (!isSupabaseConfigured) {

@@ -64,6 +64,29 @@ export const createSampleTokensWithMetadata = async (): Promise<VotingToken[]> =
   return tokens
 }
 
+// Test database connectivity
+export const testDatabaseConnection = async (): Promise<void> => {
+  console.log('Testing database connection...')
+  
+  try {
+    // Test simple query
+    const { data, error } = await supabase
+      .from('voting_tokens')
+      .select('id')
+      .limit(1)
+    
+    console.log('Database test result:', { data, error })
+    
+    if (error) {
+      console.error('Database connection failed:', error)
+    } else {
+      console.log('Database connection successful!')
+    }
+  } catch (err) {
+    console.error('Database test error:', err)
+  }
+}
+
 // Get current user ID from wallet (if connected)
 export const getCurrentUserId = (walletAddress?: string): string => {
   if (walletAddress) {
@@ -80,8 +103,59 @@ export const getCurrentUserId = (walletAddress?: string): string => {
   return newId
 }
 
+// Initialize voting tokens in database if they don't exist
+export const initializeVotingTokens = async (): Promise<void> => {
+  console.log('Checking if voting tokens exist in database...')
+  
+  const { data: existingTokens, error: fetchError } = await supabase
+    .from('voting_tokens')
+    .select('id')
+  
+  if (fetchError) {
+    console.error('Error checking existing tokens:', fetchError)
+    return
+  }
+  
+  if (!existingTokens || existingTokens.length === 0) {
+    console.log('No tokens found, initializing with sample data...')
+    
+    // Create tokens with metadata
+    const tokensToInsert = await Promise.all(
+      VOTING_TOKEN_ADDRESSES.map(async (address, index) => {
+        const metadata = await fetchTokenMetadata(address)
+        return {
+          id: `${index + 1}`,
+          symbol: metadata.symbol,
+          name: metadata.name,
+          contract_address: address,
+          votes: 0,
+          image: metadata.image,
+          description: metadata.description
+        }
+      })
+    )
+    
+    console.log('Inserting tokens:', tokensToInsert)
+    
+    const { error: insertError } = await supabase
+      .from('voting_tokens')
+      .insert(tokensToInsert)
+    
+    if (insertError) {
+      console.error('Error inserting tokens:', insertError)
+    } else {
+      console.log('Tokens initialized successfully!')
+    }
+  } else {
+    console.log('Tokens already exist in database:', existingTokens.length)
+  }
+}
+
 // Fetch all voting tokens
 export const fetchVotingTokens = async (): Promise<VotingToken[]> => {
+  // Initialize tokens if needed
+  await initializeVotingTokens()
+  
   const { data, error } = await supabase
     .from('voting_tokens')
     .select('*')
@@ -158,14 +232,19 @@ export const submitVote = async (tokenId: string, walletAddress?: string): Promi
   const userId = getCurrentUserId(walletAddress)
   
   try {
+    console.log('Attempting to submit vote:', { tokenId, userId, walletAddress })
+    
     // Check if user already voted
     const alreadyVoted = await hasUserVoted(tokenId, walletAddress)
+    console.log('User already voted check:', alreadyVoted)
+    
     if (alreadyVoted) {
       throw new Error('User has already voted for this token')
     }
     
     // Insert vote
-    const { error: voteError } = await supabase
+    console.log('Inserting vote into user_votes table...')
+    const { data: voteData, error: voteError } = await supabase
       .from('user_votes')
       .insert([
         {
@@ -173,6 +252,9 @@ export const submitVote = async (tokenId: string, walletAddress?: string): Promi
           token_id: tokenId
         }
       ])
+      .select()
+    
+    console.log('Vote insert result:', { voteData, voteError })
     
     if (voteError) {
       console.error('Error submitting vote:', voteError)
@@ -180,20 +262,27 @@ export const submitVote = async (tokenId: string, walletAddress?: string): Promi
     }
     
     // Update vote count in voting_tokens table by counting actual votes
+    console.log('Getting new vote count...')
     const newVoteCount = await getTokenVoteCount(tokenId)
-    const { error: updateError } = await supabase
+    console.log('New vote count:', newVoteCount)
+    
+    const { data: updateData, error: updateError } = await supabase
       .from('voting_tokens')
       .update({ 
         votes: newVoteCount,
         updated_at: new Date().toISOString()
       })
       .eq('id', tokenId)
+      .select()
+    
+    console.log('Vote count update result:', { updateData, updateError })
     
     if (updateError) {
       console.error('Error updating vote count:', updateError)
       throw updateError
     }
     
+    console.log('Vote submitted successfully!')
     return true
   } catch (error) {
     console.error('Error in submitVote:', error)
@@ -205,6 +294,8 @@ export const submitVote = async (tokenId: string, walletAddress?: string): Promi
 export const subscribeToVotingUpdates = (
   callback: (tokens: VotingToken[]) => void
 ) => {
+  console.log('Setting up real-time subscription...')
+  
   const subscription = supabase
     .channel('voting_changes')
     .on(
@@ -214,7 +305,8 @@ export const subscribeToVotingUpdates = (
         schema: 'public',
         table: 'voting_tokens'
       },
-      async () => {
+      async (payload) => {
+        console.log('Real-time update received for voting_tokens:', payload)
         // Refresh tokens when voting_tokens table changes
         try {
           const tokens = await fetchVotingTokens()
@@ -231,7 +323,8 @@ export const subscribeToVotingUpdates = (
         schema: 'public',
         table: 'user_votes'
       },
-      async () => {
+      async (payload) => {
+        console.log('Real-time update received for user_votes:', payload)
         // Refresh tokens when new votes are cast
         try {
           const tokens = await fetchVotingTokens()
@@ -241,7 +334,9 @@ export const subscribeToVotingUpdates = (
         }
       }
     )
-    .subscribe()
+    .subscribe((status) => {
+      console.log('Subscription status:', status)
+    })
   
   return subscription
 }

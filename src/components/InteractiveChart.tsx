@@ -1,19 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { createChart, CandlestickSeries, IChartApi, ISeriesApi } from 'lightweight-charts';
+import { createChart, AreaSeries, IChartApi, ISeriesApi } from 'lightweight-charts';
 
 interface ChartData {
   time: number;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
+  value: number;
 }
 
 const InteractiveChart: React.FC = () => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
+  const seriesRef = useRef<ISeriesApi<'Area'> | null>(null);
   
   const [data, setData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,35 +19,21 @@ const InteractiveChart: React.FC = () => {
   const TOKEN_MINT = '9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump';
   const SOLANA_TRACKER_API_KEY = 'ab5915df-4f94-449a-96c5-c37cbc92ef47';
 
-  // Generate sample data that looks like real trading data
+  // Generate simple sample data for area chart
   const generateSampleData = (): ChartData[] => {
     const data: ChartData[] = [];
-    let price = 0.000001174; // More realistic crypto price
+    let price = 0.000001174;
     const now = Math.floor(Date.now() / 1000);
     
-    for (let i = 200; i >= 0; i--) {
-      const time = now - (i * 300); // 5 minute intervals
-      const volatility = 0.05; // 5% volatility
-      const trend = Math.random() > 0.5 ? 0.001 : -0.001; // Random trend
-      
-      const change = (Math.random() - 0.5) * volatility + trend;
-      const open = price;
-      const close = Math.max(price + change, 0.000000001); // Prevent negative prices
-      
-      const high = Math.max(open, close) * (1 + Math.random() * 0.02);
-      const low = Math.min(open, close) * (1 - Math.random() * 0.02);
-      const volume = Math.random() * 50000 + 10000;
+    for (let i = 100; i >= 0; i--) {
+      const time = now - (i * 60); // 1 minute intervals
+      const change = (Math.random() - 0.5) * 0.02;
+      price = Math.max(price + change, 0.000000001);
       
       data.push({
         time,
-        open,
-        high,
-        low,
-        close,
-        volume
+        value: price
       });
-      
-      price = close;
     }
     
     return data;
@@ -63,8 +45,9 @@ const InteractiveChart: React.FC = () => {
       setLoading(true);
       setError(null);
 
+      console.log('Fetching data from Solana Tracker API...');
       const response = await fetch(
-        `https://data.solanatracker.io/chart/${TOKEN_MINT}?type=1m&limit=200`,
+        `https://data.solanatracker.io/chart/${TOKEN_MINT}?type=1m&limit=100`,
         {
           headers: {
             'x-api-key': SOLANA_TRACKER_API_KEY,
@@ -77,29 +60,27 @@ const InteractiveChart: React.FC = () => {
       }
 
       const result = await response.json();
+      console.log('API Response:', result);
       
       let chartData: ChartData[] = [];
       
       if (result.oclhv && Array.isArray(result.oclhv)) {
         chartData = result.oclhv.map((item: any) => ({
           time: item.time,
-          open: item.open,
-          high: item.high,
-          low: item.low,
-          close: item.close,
-          volume: item.volume || 0,
+          value: item.close, // Use close price for area chart
         }));
+        console.log('Processed chart data:', chartData);
       }
 
       // If no data or very little data, use sample data
-      if (chartData.length < 10) {
+      if (chartData.length < 5) {
         console.log('Using sample data due to insufficient API data');
         chartData = generateSampleData();
       }
 
       setData(chartData);
       if (chartData.length > 0) {
-        setLastPrice(chartData[chartData.length - 1].close);
+        setLastPrice(chartData[chartData.length - 1].value);
       }
     } catch (err) {
       console.error('Error fetching data:', err);
@@ -108,26 +89,24 @@ const InteractiveChart: React.FC = () => {
       // Use sample data on error
       const sampleData = generateSampleData();
       setData(sampleData);
-      setLastPrice(sampleData[sampleData.length - 1].close);
+      setLastPrice(sampleData[sampleData.length - 1].value);
     } finally {
       setLoading(false);
     }
   };
 
-  // Initialize chart with full interactivity
+  // Initialize chart with area series
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
     try {
-      const chart = createChart(chartContainerRef.current, {
+      const chartOptions = { 
+        layout: { 
+          textColor: 'black', 
+          background: { type: 'solid', color: 'white' } 
+        },
         width: chartContainerRef.current.clientWidth,
         height: 400,
-        layout: {
-          backgroundColor: '#ffffff',
-          textColor: '#333333',
-          fontSize: 12,
-          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-        },
         grid: {
           vertLines: { 
             color: '#f0f3fa',
@@ -142,87 +121,38 @@ const InteractiveChart: React.FC = () => {
         },
         crosshair: {
           mode: 1,
-          vertLine: {
-            color: '#9B7DFF',
-            width: 1,
-            style: 2,
-            visible: true,
-            labelVisible: true,
-          },
-          horzLine: {
-            color: '#9B7DFF',
-            width: 1,
-            style: 2,
-            visible: true,
-            labelVisible: true,
-          },
         },
         timeScale: {
           timeVisible: true,
           secondsVisible: false,
-          borderVisible: true,
-          borderColor: '#D1D5DB',
-          rightOffset: 12,
-          barSpacing: 6,
-          fixLeftEdge: false,
-          lockVisibleTimeRangeOnResize: true,
-          rightBarStaysOnScroll: true,
-          allowBoldLabels: true,
-          visible: true,
-          allowShiftVisibleRangeOnWhitespaceClick: true,
-          shiftVisibleRangeOnNewBar: true,
         },
         rightPriceScale: {
-          visible: true,
-          borderVisible: true,
-          borderColor: '#D1D5DB',
-          textColor: '#333333',
-          entireTextOnly: false,
-          ticksVisible: true,
           scaleMargins: {
             top: 0.1,
             bottom: 0.1,
           },
         },
-        leftPriceScale: {
-          visible: false,
-        },
-        // Enable all interactions
+        // Enable interactions
         handleScroll: {
           mouseWheel: true,
           pressedMouseMove: true,
-          horzTouchDrag: true,
-          vertTouchDrag: true,
         },
         handleScale: {
-          axisPressedMouseMove: true,
           mouseWheel: true,
           pinch: true,
         },
-        kineticScroll: {
-          touch: true,
-          mouse: false,
-        },
-      });
+      };
 
-      const candlestickSeries = chart.addSeries(CandlestickSeries, {
-        upColor: '#26a69a',
-        downColor: '#ef5350',
-        borderVisible: false,
-        wickUpColor: '#26a69a',
-        wickDownColor: '#ef5350',
-        priceFormat: {
-          type: 'price',
-          precision: 9,
-          minMove: 0.000000001,
-        },
-        priceLineVisible: true,
-        lastValueVisible: true,
-        title: 'BONK/USD',
+      const chart = createChart(chartContainerRef.current, chartOptions);
+      
+      const areaSeries = chart.addSeries(AreaSeries, { 
+        lineColor: '#2962FF', 
+        topColor: '#2962FF', 
+        bottomColor: 'rgba(41, 98, 255, 0.28)' 
       });
 
       chartRef.current = chart;
-      seriesRef.current = candlestickSeries;
+      seriesRef.current = areaSeries;
 
       // Handle resize
       const handleResize = () => {
@@ -236,16 +166,6 @@ const InteractiveChart: React.FC = () => {
       };
 
       window.addEventListener('resize', handleResize);
-
-      // Subscribe to crosshair move for price tracking
-      chart.subscribeCrosshairMove((param) => {
-        if (param.time && param.seriesData) {
-          const data = param.seriesData.get(candlestickSeries);
-          if (data) {
-            // You can add custom logic here for crosshair interactions
-          }
-        }
-      });
 
       return () => {
         window.removeEventListener('resize', handleResize);
@@ -265,15 +185,9 @@ const InteractiveChart: React.FC = () => {
   useEffect(() => {
     if (seriesRef.current && data.length > 0) {
       try {
-        const chartData = data.map(item => ({
-          time: item.time,
-          open: item.open,
-          high: item.high,
-          low: item.low,
-          close: item.close,
-        }));
-
-        seriesRef.current.setData(chartData);
+        console.log('Setting data to chart:', data);
+        
+        seriesRef.current.setData(data);
         
         // Fit content to show all data initially
         if (chartRef.current) {
@@ -291,45 +205,9 @@ const InteractiveChart: React.FC = () => {
   }, []);
 
   // Chart control functions
-  const resetChart = () => {
-    if (chartRef.current) {
-      chartRef.current.timeScale().resetTimeScale();
-    }
-  };
-
   const fitContent = () => {
     if (chartRef.current) {
       chartRef.current.timeScale().fitContent();
-    }
-  };
-
-  const zoomIn = () => {
-    if (chartRef.current) {
-      const timeScale = chartRef.current.timeScale();
-      const logicalRange = timeScale.getVisibleLogicalRange();
-      if (logicalRange) {
-        const center = (logicalRange.from + logicalRange.to) / 2;
-        const newRange = (logicalRange.to - logicalRange.from) * 0.8;
-        timeScale.setVisibleLogicalRange({
-          from: center - newRange / 2,
-          to: center + newRange / 2,
-        });
-      }
-    }
-  };
-
-  const zoomOut = () => {
-    if (chartRef.current) {
-      const timeScale = chartRef.current.timeScale();
-      const logicalRange = timeScale.getVisibleLogicalRange();
-      if (logicalRange) {
-        const center = (logicalRange.from + logicalRange.to) / 2;
-        const newRange = (logicalRange.to - logicalRange.from) * 1.2;
-        timeScale.setVisibleLogicalRange({
-          from: center - newRange / 2,
-          to: center + newRange / 2,
-        });
-      }
     }
   };
 
@@ -355,8 +233,8 @@ const InteractiveChart: React.FC = () => {
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">BONK/USD Trading Chart</h3>
-            <p className="text-sm text-gray-600">Drag to pan • Scroll to zoom • Click to crosshair</p>
+            <h3 className="text-lg font-semibold text-gray-900">BONK/USD Area Chart</h3>
+            <p className="text-sm text-gray-600">Simple area chart with live data</p>
           </div>
           <div className="flex items-center space-x-4">
             <div className="text-right">
@@ -380,36 +258,15 @@ const InteractiveChart: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <button
-              onClick={zoomIn}
-              className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200 transition-colors"
-              title="Zoom In"
-            >
-              🔍+
-            </button>
-            <button
-              onClick={zoomOut}
-              className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200 transition-colors"
-              title="Zoom Out"
-            >
-              🔍-
-            </button>
-            <button
               onClick={fitContent}
-              className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200 transition-colors"
+              className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200 transition-colors"
               title="Fit Content"
             >
-              📏
-            </button>
-            <button
-              onClick={resetChart}
-              className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200 transition-colors"
-              title="Reset View"
-            >
-              🔄
+              📏 Fit Chart
             </button>
           </div>
           <div className="text-xs text-gray-500">
-            Mouse wheel: Zoom • Drag: Pan • Touch: Pinch to zoom
+            Mouse wheel: Zoom • Drag: Pan
           </div>
         </div>
       </div>

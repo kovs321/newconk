@@ -23,24 +23,24 @@ const InteractiveChart: React.FC = () => {
   const TOKEN_MINT = '9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump';
   const SOLANA_TRACKER_API_KEY = 'ab5915df-4f94-449a-96c5-c37cbc92ef47';
 
-  // Generate sample data
+  // Generate sample data that looks like real trading data
   const generateSampleData = (): ChartData[] => {
     const data: ChartData[] = [];
-    let price = 1.17;
+    let price = 0.000001174; // More realistic crypto price
     const now = Math.floor(Date.now() / 1000);
     
     for (let i = 200; i >= 0; i--) {
-      const time = now - (i * 60); // 1 minute intervals
-      const volatility = 0.015;
-      const trend = -0.00005;
+      const time = now - (i * 300); // 5 minute intervals
+      const volatility = 0.05; // 5% volatility
+      const trend = Math.random() > 0.5 ? 0.001 : -0.001; // Random trend
       
       const change = (Math.random() - 0.5) * volatility + trend;
       const open = price;
-      const close = price + change;
+      const close = Math.max(price + change, 0.000000001); // Prevent negative prices
       
-      const high = Math.max(open, close) + Math.random() * 0.008;
-      const low = Math.min(open, close) - Math.random() * 0.008;
-      const volume = Math.random() * 5000 + 1000;
+      const high = Math.max(open, close) * (1 + Math.random() * 0.02);
+      const low = Math.min(open, close) * (1 - Math.random() * 0.02);
+      const volume = Math.random() * 50000 + 10000;
       
       data.push({
         time,
@@ -206,19 +206,19 @@ const InteractiveChart: React.FC = () => {
       });
 
       const candlestickSeries = chart.addSeries(CandlestickSeries, {
-        upColor: '#26A69A',
-        downColor: '#EF5350',
+        upColor: '#26a69a',
+        downColor: '#ef5350',
         borderVisible: false,
-        wickUpColor: '#26A69A',
-        wickDownColor: '#EF5350',
+        wickUpColor: '#26a69a',
+        wickDownColor: '#ef5350',
         priceFormat: {
           type: 'price',
-          precision: 6,
-          minMove: 0.000001,
+          precision: 9,
+          minMove: 0.000000001,
         },
         priceLineVisible: true,
         lastValueVisible: true,
-        title: 'Price',
+        title: 'BONK/USD',
       });
 
       chartRef.current = chart;
@@ -335,7 +335,7 @@ const InteractiveChart: React.FC = () => {
 
   const formatPrice = (price: number | null) => {
     if (price === null) return '--';
-    return price.toFixed(6);
+    return price.toFixed(9);
   };
 
   if (loading) {
@@ -355,7 +355,7 @@ const InteractiveChart: React.FC = () => {
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Interactive Trading Chart</h3>
+            <h3 className="text-lg font-semibold text-gray-900">BONK/USD Trading Chart</h3>
             <p className="text-sm text-gray-600">Drag to pan • Scroll to zoom • Click to crosshair</p>
           </div>
           <div className="flex items-center space-x-4">

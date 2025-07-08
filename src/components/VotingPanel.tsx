@@ -35,7 +35,7 @@ const VotingPanel = () => {
         // If Supabase is not configured, show sample data with real metadata
         if (!isSupabaseConfigured) {
           console.log('Supabase not configured, fetching token metadata for demo...');
-          const { createSampleTokensWithMetadata } = require('../lib/voting-service');
+          const { createSampleTokensWithMetadata } = await import('../lib/voting-service');
           const sampleTokens = await createSampleTokensWithMetadata();
           
           const tokensWithVoteStatus = sampleTokens.map(token => ({

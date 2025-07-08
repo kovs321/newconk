@@ -4,7 +4,8 @@ import {
   submitVote, 
   getUserVotedTokens, 
   subscribeToVotingUpdates,
-  getUserByWallet
+  getUserByWallet,
+  createOrGetUser
 } from '../lib/voting-service-supabase';
 import { Database } from '@/integrations/supabase/types';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -37,13 +38,19 @@ const VotingPanel = () => {
         const tokens = await fetchVotableTokens();
         console.log('Tokens from Supabase:', tokens);
         
-        // If wallet is connected, get user's votes
+        // If wallet is connected, create/get user and their votes
         let userVotes: string[] = [];
         if (connected && publicKey) {
           const walletAddress = publicKey.toString();
-          const user = await getUserByWallet(walletAddress);
+          console.log('Wallet connected, creating/getting user:', walletAddress);
+          
+          // Create or get user in database
+          const user = await createOrGetUser(walletAddress);
           if (user) {
+            console.log('User created/found:', user.id);
             userVotes = await getUserVotedTokens(user.id);
+          } else {
+            console.error('Failed to create/get user');
           }
         }
         

@@ -19,33 +19,17 @@ const InteractiveChart: React.FC = () => {
   const [previousLivePrice, setPreviousLivePrice] = useState<number | null>(null);
   const [priceDirection, setPriceDirection] = useState<'up' | 'down' | null>(null);
   const [wsStatus, setWsStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
-  const [currentCandle, setCurrentCandle] = useState<{
-    timestamp: number;
-    open: number;
-    high: number;
-    low: number;
-    close: number;
-    volume: number;
-  } | null>(null);
 
   const TOKEN_MINT = '34VWJ7PPwcPpYEqTGJQXo8qaMJYoP8VKuBGHPG3ypump';
   const SOLANA_TRACKER_API_KEY = 'ab5915df-4f94-449a-96c5-c37cbc92ef47';
-  const HELIUS_API_KEY = 'b651027b-45c5-47ce-95a4-163a4f6127a7';
-  const HELIUS_WS_URL = `wss://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
-  
-  // DEX program IDs to monitor
-  const DEX_PROGRAMS = [
-    'JUP4Fb2cqiRUcaTHdrPC8h2gNsA2ETXiPDD33WcGuJB', // Jupiter V6
-    '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8', // Raydium AMM
-    '9W959DqEETiGZocYWCQPaJ6sBmUzgfxXfqGeTEdp3aQP', // Orca
-  ];
+  const SOLANA_TRACKER_WS_URL = 'wss://datastream.solanatracker.io/d4fc0684-2e18-4de4-abab-cbe984738ea7';
   
   const wsRef = useRef<WebSocket | null>(null);
-  const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const subscriptionIdsRef = useRef<number[]>([]);
-  
-  const CANDLE_INTERVAL = 60000; // 1 minute candles
+  const reconnectAttempts = useRef<number>(0);
+  const reconnectDelay = 2500;
+  const reconnectDelayMax = 4500;
+  const randomizationFactor = 0.5;
 
   // WebSocket connection management
   const connectWebSocket = () => {
@@ -53,17 +37,17 @@ const InteractiveChart: React.FC = () => {
       return;
     }
 
-    console.log('Connecting to Helius WebSocket...');
+    console.log('Connecting to Solana Tracker WebSocket...');
     setWsStatus('connecting');
 
-    const ws = new WebSocket(HELIUS_WS_URL);
+    const ws = new WebSocket(SOLANA_TRACKER_WS_URL);
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log('WebSocket connected');
+      console.log('WebSocket connected to Solana Tracker');
       setWsStatus('connected');
-      startPing();
-      subscribeToPrograms();
+      reconnectAttempts.current = 0;
+      subscribeToPriceUpdates();
     };
 
     ws.onmessage = (event) => {
@@ -76,14 +60,10 @@ const InteractiveChart: React.FC = () => {
     };
 
     ws.onclose = () => {
-      console.log('WebSocket disconnected');
+      console.log('WebSocket disconnected from Solana Tracker');
       setWsStatus('disconnected');
-      stopPing();
-      
-      // Attempt to reconnect after 5 seconds
-      reconnectTimeoutRef.current = setTimeout(() => {
-        connectWebSocket();
-      }, 5000);
+      wsRef.current = null;
+      reconnectWebSocket();
     };
 
     ws.onerror = (error) => {
@@ -92,239 +72,63 @@ const InteractiveChart: React.FC = () => {
     };
   };
 
-  const startPing = () => {
-    if (pingIntervalRef.current) {
-      clearInterval(pingIntervalRef.current);
-    }
-    
-    pingIntervalRef.current = setInterval(() => {
-      if (wsRef.current?.readyState === WebSocket.OPEN) {
-        // Send ping using WebSocket ping method
-        wsRef.current.ping();
-        console.log('Ping sent');
-      }
-    }, 30000); // Ping every 30 seconds
+  const reconnectWebSocket = () => {
+    console.log('Reconnecting to WebSocket server');
+    const delay = Math.min(
+      reconnectDelay * Math.pow(2, reconnectAttempts.current),
+      reconnectDelayMax
+    );
+    const jitter = delay * randomizationFactor;
+    const reconnectDelayCalculated = delay + Math.random() * jitter;
+
+    reconnectTimeoutRef.current = setTimeout(() => {
+      reconnectAttempts.current++;
+      connectWebSocket();
+    }, reconnectDelayCalculated);
   };
 
-  const stopPing = () => {
-    if (pingIntervalRef.current) {
-      clearInterval(pingIntervalRef.current);
-      pingIntervalRef.current = null;
-    }
-  };
-
-  const subscribeToPrograms = () => {
+  const subscribeToPriceUpdates = () => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
       return;
     }
 
-    DEX_PROGRAMS.forEach((programId, index) => {
-      const subscription = {
-        jsonrpc: '2.0',
-        id: index + 1,
-        method: 'programSubscribe',
-        params: [
-          programId,
-          {
-            encoding: 'jsonParsed',
-            commitment: 'confirmed'
-          }
-        ]
-      };
+    // Subscribe to price updates for the token
+    const priceSubscription = {
+      type: 'join',
+      room: `price-by-token:${TOKEN_MINT}`
+    };
 
-      wsRef.current!.send(JSON.stringify(subscription));
-      console.log(`Subscribed to program: ${programId}`);
-    });
+    wsRef.current.send(JSON.stringify(priceSubscription));
+    console.log(`Subscribed to price updates for token: ${TOKEN_MINT}`);
   };
 
   const handleWebSocketMessage = (message: any) => {
-    if (message.method === 'programNotification') {
-      const transaction = message.params.result;
-      processTransaction(transaction);
-    } else if (message.result && typeof message.result === 'number') {
-      // Store subscription ID
-      subscriptionIdsRef.current.push(message.result);
-      console.log(`Subscription confirmed: ${message.result}`);
-    }
-  };
-
-  const disconnectWebSocket = () => {
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
-    }
-    stopPing();
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-  };
-
-  // Transaction processing functions
-  const processTransaction = (result: any) => {
-    const transaction = result.value;
-    
-    // Only process successful transactions
-    if (transaction.meta?.err !== null) {
-      return;
-    }
-
-    // Check if this is a swap transaction
-    const logs = transaction.meta?.logMessages || [];
-    const isSwap = logs.some((log: string) => 
-      log.includes('Instruction: Swap') || 
-      log.includes('swap') ||
-      log.includes('Program log: Instruction: Swap')
-    );
-
-    if (isSwap) {
-      const swapData = extractSwapData(transaction);
-      if (swapData) {
-        console.log('Swap detected:', swapData);
+    if (message.type === 'message') {
+      if (message.room === `price-by-token:${TOKEN_MINT}`) {
+        const priceData = message.data;
+        console.log('Price update received:', priceData);
+        
         // Update live price immediately with direction
         setLivePrice(prevPrice => {
           if (prevPrice !== null) {
             setPreviousLivePrice(prevPrice);
-            setPriceDirection(swapData.price > prevPrice ? 'up' : 'down');
+            setPriceDirection(priceData.price > prevPrice ? 'up' : 'down');
             // Reset direction after animation
             setTimeout(() => setPriceDirection(null), 1000);
           }
-          return swapData.price;
+          return priceData.price;
         });
-        updateOHLCVCandle(swapData);
+        
+        // Update the chart with new price data
+        updateChartWithPrice(priceData);
       }
     }
   };
 
-  const extractSwapData = (transaction: any) => {
-    try {
-      const preTokenBalances = transaction.meta?.preTokenBalances || [];
-      const postTokenBalances = transaction.meta?.postTokenBalances || [];
-      
-      // Calculate balance changes
-      const balanceChanges = calculateBalanceChanges(preTokenBalances, postTokenBalances);
-      
-      // Look for BONK token in the changes
-      const bonkChange = balanceChanges.find(change => change.mint === TOKEN_MINT);
-      
-      if (!bonkChange) {
-        return null; // No BONK involved in this swap
-      }
-
-      // Find the other token in the swap
-      const otherTokenChange = balanceChanges.find(change => 
-        change.mint !== TOKEN_MINT && Math.abs(change.change) > 0
-      );
-
-      if (!otherTokenChange) {
-        return null;
-      }
-
-      // Calculate price based on the swap
-      let price = 0;
-      let volume = 0;
-
-      if (bonkChange.change > 0) {
-        // BONK was bought (positive change)
-        price = Math.abs(otherTokenChange.change) / bonkChange.change;
-        volume = bonkChange.change;
-      } else {
-        // BONK was sold (negative change)
-        price = Math.abs(bonkChange.change) / otherTokenChange.change;
-        volume = Math.abs(bonkChange.change);
-      }
-
-      // Basic price validation
-      if (price <= 0 || price > 1 || isNaN(price)) {
-        return null;
-      }
-
-      return {
-        timestamp: Date.now(),
-        price: price,
-        volume: volume,
-        signature: transaction.signature
-      };
-    } catch (error) {
-      console.error('Error extracting swap data:', error);
-      return null;
-    }
-  };
-
-  const calculateBalanceChanges = (preBalances: any[], postBalances: any[]) => {
-    const changes = [];
-    
-    // Create a map of pre-balances
-    const preMap = new Map();
-    preBalances.forEach(balance => {
-      if (balance.mint) {
-        preMap.set(`${balance.accountIndex}-${balance.mint}`, balance);
-      }
-    });
-
-    // Calculate changes
-    postBalances.forEach(postBalance => {
-      if (postBalance.mint) {
-        const key = `${postBalance.accountIndex}-${postBalance.mint}`;
-        const preBalance = preMap.get(key);
-        
-        if (preBalance) {
-          const preAmount = parseFloat(preBalance.uiTokenAmount.amount);
-          const postAmount = parseFloat(postBalance.uiTokenAmount.amount);
-          const change = postAmount - preAmount;
-
-          if (change !== 0) {
-            changes.push({
-              mint: postBalance.mint,
-              change: change,
-              decimals: postBalance.uiTokenAmount.decimals
-            });
-          }
-        }
-      }
-    });
-
-    return changes;
-  };
-
-  const updateOHLCVCandle = (swapData: any) => {
-    const candleTime = Math.floor(swapData.timestamp / CANDLE_INTERVAL) * CANDLE_INTERVAL;
-    
-    setCurrentCandle(prevCandle => {
-      if (!prevCandle || prevCandle.timestamp !== candleTime) {
-        // Complete previous candle and start new one
-        if (prevCandle) {
-          sendCandleToChart(prevCandle);
-        }
-        
-        return {
-          timestamp: candleTime,
-          open: swapData.price,
-          high: swapData.price,
-          low: swapData.price,
-          close: swapData.price,
-          volume: swapData.volume
-        };
-      } else {
-        // Update existing candle
-        return {
-          ...prevCandle,
-          high: Math.max(prevCandle.high, swapData.price),
-          low: Math.min(prevCandle.low, swapData.price),
-          close: swapData.price,
-          volume: prevCandle.volume + swapData.volume
-        };
-      }
-    });
-  };
-
-  const sendCandleToChart = (candle: any) => {
-    console.log('New OHLCV Candle:', candle);
-    
-    // Convert to chart format
+  const updateChartWithPrice = (priceData: any) => {
     const chartPoint: ChartData = {
-      time: Math.floor(candle.timestamp / 1000), // Convert to seconds
-      value: candle.close
+      time: Math.floor(priceData.time / 1000), // Convert to seconds
+      value: priceData.price
     };
 
     // Add to existing data
@@ -334,13 +138,32 @@ const InteractiveChart: React.FC = () => {
     });
 
     // Update last price
-    setLastPrice(candle.close);
+    setLastPrice(priceData.price);
 
     // Update chart if series is ready
     if (seriesRef.current) {
       seriesRef.current.update(chartPoint);
     }
   };
+
+  const disconnectWebSocket = () => {
+    if (wsRef.current) {
+      // Leave the room before closing
+      const leaveSubscription = {
+        type: 'leave',
+        room: `price-by-token:${TOKEN_MINT}`
+      };
+      wsRef.current.send(JSON.stringify(leaveSubscription));
+      
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+  };
+
 
   // Generate simple sample data for area chart
   const generateSampleData = (): ChartData[] => {
@@ -686,7 +509,7 @@ const InteractiveChart: React.FC = () => {
       {/* Footer */}
       <div className="px-4 pb-4 flex justify-between items-center">
         <div className="text-xs text-gray-500">
-          {error ? 'Sample data displayed' : 'Live data from Solana Tracker + WebSocket'}
+          {error ? 'Sample data displayed' : 'Historical: Solana Tracker API | Live: Solana Tracker WebSocket'}
         </div>
         <div className="flex space-x-2">
           <button

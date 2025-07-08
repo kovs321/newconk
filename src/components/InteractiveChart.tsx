@@ -14,9 +14,8 @@ const InteractiveChart: React.FC = () => {
   const [data, setData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [lastPrice, setLastPrice] = useState<number | null>(null);
-  const [livePrice, setLivePrice] = useState<number | null>(null);
-  const [previousLivePrice, setPreviousLivePrice] = useState<number | null>(null);
+  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
+  const [previousPrice, setPreviousPrice] = useState<number | null>(null);
   const [priceDirection, setPriceDirection] = useState<'up' | 'down' | null>(null);
   const [wsStatus, setWsStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
 
@@ -108,10 +107,10 @@ const InteractiveChart: React.FC = () => {
         const priceData = message.data;
         console.log('Price update received:', priceData);
         
-        // Update live price immediately with direction
-        setLivePrice(prevPrice => {
+        // Update current price immediately with direction
+        setCurrentPrice(prevPrice => {
           if (prevPrice !== null) {
-            setPreviousLivePrice(prevPrice);
+            setPreviousPrice(prevPrice);
             setPriceDirection(priceData.price > prevPrice ? 'up' : 'down');
             // Reset direction after animation
             setTimeout(() => setPriceDirection(null), 1000);
@@ -137,8 +136,7 @@ const InteractiveChart: React.FC = () => {
       return newData;
     });
 
-    // Update last price
-    setLastPrice(priceData.price);
+    // Update current price is already handled above
 
     // Update chart if series is ready
     if (seriesRef.current) {
@@ -231,7 +229,7 @@ const InteractiveChart: React.FC = () => {
 
       setData(chartData);
       if (chartData.length > 0) {
-        setLastPrice(chartData[chartData.length - 1].value);
+        setCurrentPrice(chartData[chartData.length - 1].value);
       }
     } catch (err) {
       console.error('Error fetching data:', err);
@@ -240,7 +238,7 @@ const InteractiveChart: React.FC = () => {
       // Use sample data on error
       const sampleData = generateSampleData();
       setData(sampleData);
-      setLastPrice(sampleData[sampleData.length - 1].value);
+      setCurrentPrice(sampleData[sampleData.length - 1].value);
     } finally {
       setLoading(false);
     }
@@ -383,7 +381,7 @@ const InteractiveChart: React.FC = () => {
     console.log('Loading sample data for testing...');
     const sampleData = generateSampleData();
     setData(sampleData);
-    setLastPrice(sampleData[sampleData.length - 1].value);
+    setCurrentPrice(sampleData[sampleData.length - 1].value);
     setLoading(false);
     
     // Also fetch real data
@@ -406,11 +404,6 @@ const InteractiveChart: React.FC = () => {
   };
 
   const formatPrice = (price: number | null) => {
-    if (price === null) return '--';
-    return price.toFixed(9);
-  };
-  
-  const formatLivePrice = (price: number | null) => {
     if (price === null) return '--';
     return price.toFixed(9);
   };
@@ -437,21 +430,15 @@ const InteractiveChart: React.FC = () => {
           </div>
           <div className="flex items-center space-x-6">
             <div className="text-right">
-              <div className="text-xs text-gray-500 mb-1">Historical Price</div>
-              <div className="text-lg font-semibold text-gray-700">
-                ${formatPrice(lastPrice)}
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-xs text-gray-500 mb-1">Live WebSocket Price</div>
+              <div className="text-xs text-gray-500 mb-1">Current Price</div>
               <div className={`text-2xl font-bold transition-all duration-300 ${
-                livePrice ? 
+                currentPrice ? 
                   priceDirection === 'up' ? 'text-green-500 transform scale-110' :
                   priceDirection === 'down' ? 'text-red-500 transform scale-110' :
                   'text-blue-600' 
                 : 'text-gray-400'
               }`}>
-                ${formatLivePrice(livePrice)}
+                ${formatPrice(currentPrice)}
                 {priceDirection && (
                   <span className="ml-1 text-sm">
                     {priceDirection === 'up' ? '↗' : '↘'}

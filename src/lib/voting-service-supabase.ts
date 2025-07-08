@@ -111,35 +111,28 @@ export const getUserVotedTokens = async (userId: string): Promise<string[]> => {
   }
 }
 
-// Submit a vote
+// Submit a vote using edge function for better logging
 export const submitVote = async (walletAddress: string, tokenId: string): Promise<boolean> => {
   try {
-    // Get or create user
-    const user = await createOrGetUser(walletAddress)
-    if (!user) {
-      throw new Error('Failed to authenticate user')
-    }
-
-    // Check if already voted
-    const hasVoted = await hasUserVotedForToken(user.id, tokenId)
-    if (hasVoted) {
-      throw new Error('You have already voted for this token')
-    }
-
-    // Submit vote
-    const { error } = await supabase
-      .from('user_votes')
-      .insert({
-        user_id: user.id,
-        token_id: tokenId,
-        voted_at: new Date().toISOString()
-      })
+    console.log('Calling submit-vote edge function...')
+    
+    const { data, error } = await supabase.functions.invoke('submit-vote', {
+      body: {
+        walletAddress,
+        tokenId
+      }
+    })
 
     if (error) {
-      console.error('Error submitting vote:', error)
-      throw new Error('Failed to submit vote')
+      console.error('Edge function error:', error)
+      throw error
     }
 
+    if (data?.error) {
+      throw new Error(data.error)
+    }
+
+    console.log('Vote submitted via edge function:', data)
     return true
   } catch (error) {
     console.error('Error in submitVote:', error)

@@ -15,6 +15,9 @@ const InteractiveChart: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastPrice, setLastPrice] = useState<number | null>(null);
+  const [livePrice, setLivePrice] = useState<number | null>(null);
+  const [previousLivePrice, setPreviousLivePrice] = useState<number | null>(null);
+  const [priceDirection, setPriceDirection] = useState<'up' | 'down' | null>(null);
   const [wsStatus, setWsStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
   const [currentCandle, setCurrentCandle] = useState<{
     timestamp: number;
@@ -25,7 +28,7 @@ const InteractiveChart: React.FC = () => {
     volume: number;
   } | null>(null);
 
-  const TOKEN_MINT = '9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump';
+  const TOKEN_MINT = '34VWJ7PPwcPpYEqTGJQXo8qaMJYoP8VKuBGHPG3ypump';
   const SOLANA_TRACKER_API_KEY = 'ab5915df-4f94-449a-96c5-c37cbc92ef47';
   const HELIUS_API_KEY = 'b651027b-45c5-47ce-95a4-163a4f6127a7';
   const HELIUS_WS_URL = `wss://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
@@ -178,6 +181,16 @@ const InteractiveChart: React.FC = () => {
       const swapData = extractSwapData(transaction);
       if (swapData) {
         console.log('Swap detected:', swapData);
+        // Update live price immediately with direction
+        setLivePrice(prevPrice => {
+          if (prevPrice !== null) {
+            setPreviousLivePrice(prevPrice);
+            setPriceDirection(swapData.price > prevPrice ? 'up' : 'down');
+            // Reset direction after animation
+            setTimeout(() => setPriceDirection(null), 1000);
+          }
+          return swapData.price;
+        });
         updateOHLCVCandle(swapData);
       }
     }
@@ -573,6 +586,11 @@ const InteractiveChart: React.FC = () => {
     if (price === null) return '--';
     return price.toFixed(9);
   };
+  
+  const formatLivePrice = (price: number | null) => {
+    if (price === null) return '--';
+    return price.toFixed(9);
+  };
 
   if (loading) {
     return (
@@ -591,24 +609,39 @@ const InteractiveChart: React.FC = () => {
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">BONK/USD Area Chart</h3>
-            <p className="text-sm text-gray-600">Simple area chart with live data</p>
+            <h3 className="text-lg font-semibold text-gray-900">Live Token Chart</h3>
+            <p className="text-sm text-gray-600">Real-time price updates via WebSocket</p>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-6">
             <div className="text-right">
-              <div className="text-xl font-bold text-gray-900">
+              <div className="text-xs text-gray-500 mb-1">Historical Price</div>
+              <div className="text-lg font-semibold text-gray-700">
                 ${formatPrice(lastPrice)}
               </div>
-              <div className="text-sm text-gray-600">
-                {data.length} candles
+            </div>
+            <div className="text-right">
+              <div className="text-xs text-gray-500 mb-1">Live WebSocket Price</div>
+              <div className={`text-2xl font-bold transition-all duration-300 ${
+                livePrice ? 
+                  priceDirection === 'up' ? 'text-green-500 transform scale-110' :
+                  priceDirection === 'down' ? 'text-red-500 transform scale-110' :
+                  'text-blue-600' 
+                : 'text-gray-400'
+              }`}>
+                ${formatLivePrice(livePrice)}
+                {priceDirection && (
+                  <span className="ml-1 text-sm">
+                    {priceDirection === 'up' ? '↗' : '↘'}
+                  </span>
+                )}
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <div className={`w-2 h-2 rounded-full ${
+              <div className={`w-3 h-3 rounded-full ${
                 wsStatus === 'connected' ? 'bg-green-500' : 
                 wsStatus === 'connecting' ? 'bg-yellow-500' : 'bg-red-500'
               }`}></div>
-              <span className="text-xs text-gray-500">
+              <span className="text-sm font-medium text-gray-600">
                 {wsStatus === 'connected' ? 'Live' : 
                  wsStatus === 'connecting' ? 'Connecting' : 'Disconnected'}
               </span>

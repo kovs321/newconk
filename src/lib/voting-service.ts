@@ -99,7 +99,10 @@ const setStorageItem = (key: string, value: any): void => {
 // Broadcast update to other tabs
 const broadcastUpdate = (type: string, data: any): void => {
   if (broadcastChannel) {
+    console.log('🔄 Broadcasting update to other tabs:', { type, data })
     broadcastChannel.postMessage({ type, data })
+  } else {
+    console.warn('❌ BroadcastChannel not available - no real-time updates')
   }
 }
 
@@ -271,12 +274,14 @@ export const subscribeToVotingUpdates = (
   }
   
   const handleMessage = async (event: MessageEvent) => {
-    console.log('Real-time update received:', event.data)
+    console.log('📨 Real-time update received in tab:', event.data)
     
     if (event.data.type === 'vote_submitted') {
+      console.log('🗳️ Vote update received, refreshing tokens...')
       // Refresh tokens when votes are cast
       try {
         const tokens = await fetchVotingTokens()
+        console.log('✅ Tokens refreshed successfully:', tokens.length)
         callback(tokens)
       } catch (error) {
         console.error('Error fetching updated tokens:', error)
@@ -299,4 +304,27 @@ export const subscribeToVotingUpdates = (
 export const getTokenVoteCount = async (tokenId: string): Promise<number> => {
   const allVotes = getStorageItem(VOTES_STORAGE_KEY) || {}
   return allVotes[tokenId] || 0
+}
+
+// Test function to simulate a vote (for console testing)
+export const testVote = async (tokenId: string = '1') => {
+  console.log('🧪 Testing vote for token:', tokenId)
+  try {
+    await submitVote(tokenId, 'test-user-' + Date.now())
+    console.log('✅ Test vote successful!')
+  } catch (error) {
+    console.error('❌ Test vote failed:', error)
+  }
+}
+
+// Export for console access
+if (typeof window !== 'undefined') {
+  (window as any).testVote = testVote
+  (window as any).getVotes = () => getStorageItem(VOTES_STORAGE_KEY)
+  (window as any).clearVotes = () => {
+    localStorage.removeItem(VOTES_STORAGE_KEY)
+    localStorage.removeItem(USER_VOTES_STORAGE_KEY)
+    localStorage.removeItem(TOKENS_STORAGE_KEY)
+    console.log('🗑️ All votes cleared!')
+  }
 }

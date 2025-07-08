@@ -1,13 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-
-// Temporarily disable wallet functionality
-const useWallet = () => ({ connected: false, publicKey: null });
-const WalletMultiButton = ({ className }: any) => (
-  <button className={className} onClick={() => alert('Please install Phantom wallet to vote!')}>
-    Connect Wallet
-  </button>
-);
+import { CustomWalletButton } from './CustomWalletButton';
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -44,7 +37,7 @@ export const Header = () => {
 
           {/* Connect Wallet Button */}
           <div className="hidden md:block">
-            <WalletMultiButton className="!bg-gray-900 !text-white !px-4 !py-2 !rounded-full !text-sm !font-medium hover:!bg-gray-800 !transition-colors !border-none" />
+            <CustomWalletButton className="bg-gray-900 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors border-none" />
           </div>
 
           {/* Mobile Menu Button */}
@@ -72,7 +65,7 @@ export const Header = () => {
               <a href="#pitch" className="block px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors">Pitch Deck</a>
               <a href="#how" className="block px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors">How it Works</a>
               <div className="px-3 py-2">
-                <WalletMultiButton className="!bg-gray-900 !text-white !px-3 !py-2 !rounded-md !text-sm !font-medium hover:!bg-gray-800 !transition-colors !border-none !w-full" />
+                <CustomWalletButton className="bg-gray-900 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-800 transition-colors border-none w-full" />
               </div>
             </div>
           </div>

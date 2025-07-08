@@ -5,12 +5,8 @@ import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { clusterApiUrl } from '@solana/web3.js';
 
-// Default styles that can be overridden by your app
-try {
-  require('@solana/wallet-adapter-react-ui/styles.css');
-} catch (e) {
-  console.warn('Could not load wallet adapter styles');
-}
+// Import styles using Vite's ?inline query
+import '@solana/wallet-adapter-react-ui/styles.css';
 
 interface WalletContextProviderProps {
   children: React.ReactNode;

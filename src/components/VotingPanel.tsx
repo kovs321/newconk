@@ -7,8 +7,7 @@ import {
   subscribeToVotingUpdates 
 } from '../lib/voting-service';
 
-// Temporarily disable wallet functionality
-const useWallet = () => ({ connected: false, publicKey: null });
+import { useWallet } from '@solana/wallet-adapter-react';
 
 interface VotingItem extends VotingToken {
   userVoted?: boolean;

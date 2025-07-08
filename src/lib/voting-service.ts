@@ -92,17 +92,22 @@ export const fetchVotingTokens = async (): Promise<VotingToken[]> => {
     throw error
   }
   
-  // Fetch metadata for each token
+  // Fetch metadata and real vote counts for each token
   if (data && data.length > 0) {
     const tokensWithMetadata = await Promise.all(
       data.map(async (token) => {
-        const metadata = await fetchTokenMetadata(token.contract_address)
+        const [metadata, realVoteCount] = await Promise.all([
+          fetchTokenMetadata(token.contract_address),
+          getTokenVoteCount(token.id)
+        ])
+        
         return {
           ...token,
           name: metadata.name || token.name,
           symbol: metadata.symbol || token.symbol,
           image: metadata.image,
-          description: metadata.description
+          description: metadata.description,
+          votes: realVoteCount // Use real vote count from user_votes table
         }
       })
     )
@@ -160,7 +165,7 @@ export const submitVote = async (tokenId: string, walletAddress?: string): Promi
     }
     
     // Insert vote
-    const { error } = await supabase
+    const { error: voteError } = await supabase
       .from('user_votes')
       .insert([
         {
@@ -169,9 +174,24 @@ export const submitVote = async (tokenId: string, walletAddress?: string): Promi
         }
       ])
     
-    if (error) {
-      console.error('Error submitting vote:', error)
-      throw error
+    if (voteError) {
+      console.error('Error submitting vote:', voteError)
+      throw voteError
+    }
+    
+    // Update vote count in voting_tokens table by counting actual votes
+    const newVoteCount = await getTokenVoteCount(tokenId)
+    const { error: updateError } = await supabase
+      .from('voting_tokens')
+      .update({ 
+        votes: newVoteCount,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', tokenId)
+    
+    if (updateError) {
+      console.error('Error updating vote count:', updateError)
+      throw updateError
     }
     
     return true
@@ -186,7 +206,7 @@ export const subscribeToVotingUpdates = (
   callback: (tokens: VotingToken[]) => void
 ) => {
   const subscription = supabase
-    .channel('voting_tokens_changes')
+    .channel('voting_changes')
     .on(
       'postgres_changes',
       {
@@ -195,7 +215,24 @@ export const subscribeToVotingUpdates = (
         table: 'voting_tokens'
       },
       async () => {
-        // Refresh tokens when any change occurs
+        // Refresh tokens when voting_tokens table changes
+        try {
+          const tokens = await fetchVotingTokens()
+          callback(tokens)
+        } catch (error) {
+          console.error('Error fetching updated tokens:', error)
+        }
+      }
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'user_votes'
+      },
+      async () => {
+        // Refresh tokens when new votes are cast
         try {
           const tokens = await fetchVotingTokens()
           callback(tokens)
@@ -209,18 +246,17 @@ export const subscribeToVotingUpdates = (
   return subscription
 }
 
-// Get vote count for a specific token
+// Get vote count for a specific token by counting user votes
 export const getTokenVoteCount = async (tokenId: string): Promise<number> => {
   const { data, error } = await supabase
-    .from('voting_tokens')
-    .select('votes')
-    .eq('id', tokenId)
-    .single()
+    .from('user_votes')
+    .select('id', { count: 'exact' })
+    .eq('token_id', tokenId)
   
   if (error) {
     console.error('Error fetching vote count:', error)
     return 0
   }
   
-  return data?.votes || 0
+  return data?.length || 0
 }

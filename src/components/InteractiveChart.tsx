@@ -101,15 +101,17 @@ const InteractiveChart: React.FC = () => {
               const newPoints = newData.filter(item => !existingTimes.has(item.time));
               
               if (newPoints.length > 0) {
-                const updatedData = [...prevData, ...newPoints].sort((a, b) => a.time - b.time);
+                console.log('Adding new points to chart:', newPoints.length);
                 
                 // Update chart with new points only
                 newPoints.forEach(point => {
                   if (seriesRef.current) {
+                    console.log('Updating chart with point:', point);
                     seriesRef.current.update(point);
                   }
                 });
                 
+                const updatedData = [...prevData, ...newPoints].sort((a, b) => a.time - b.time);
                 return updatedData;
               }
               return prevData;
@@ -207,7 +209,7 @@ const InteractiveChart: React.FC = () => {
     }
   };
 
-  // Initialize chart with area series
+  // Initialize chart with area series (only once)
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
@@ -268,17 +270,6 @@ const InteractiveChart: React.FC = () => {
 
       console.log('Chart initialized, series ready:', !!seriesRef.current);
 
-      // If we already have data, set it immediately
-      if (data.length > 0) {
-        console.log('Setting existing data to newly initialized chart');
-        const formattedData = data.map(item => ({
-          time: item.time,
-          value: Number(item.value)
-        }));
-        areaSeries.setData(formattedData);
-        chart.timeScale().fitContent();
-      }
-
       // Handle resize
       const handleResize = () => {
         if (chartContainerRef.current && chartRef.current) {
@@ -304,14 +295,13 @@ const InteractiveChart: React.FC = () => {
       console.error('Error initializing chart:', error);
       setError('Failed to initialize chart');
     }
-  }, [data]);
+  }, []); // Remove data dependency!
 
-  // Update chart data
+  // Update chart data (only for initial load)
   useEffect(() => {
     if (seriesRef.current && data.length > 0) {
       try {
-        console.log('Setting data to chart:', data.length, 'points');
-        console.log('First 3 data points:', data.slice(0, 3));
+        console.log('Setting initial data to chart:', data.length, 'points');
         
         // Ensure data is properly formatted
         const formattedData = data.map(item => ({
@@ -330,13 +320,8 @@ const InteractiveChart: React.FC = () => {
       } catch (error) {
         console.error('Error updating chart data:', error);
       }
-    } else {
-      console.log('Chart not ready or no data:', {
-        seriesReady: !!seriesRef.current,
-        dataLength: data.length
-      });
     }
-  }, [data]);
+  }, [data.length]); // Only trigger when data length changes (initial load)
 
   // Load data on mount
   useEffect(() => {

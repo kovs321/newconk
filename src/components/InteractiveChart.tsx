@@ -17,148 +17,111 @@ const InteractiveChart: React.FC = () => {
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
   const [previousPrice, setPreviousPrice] = useState<number | null>(null);
   const [priceDirection, setPriceDirection] = useState<'up' | 'down' | null>(null);
-  const [wsStatus, setWsStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const TOKEN_MINT = '34VWJ7PPwcPpYEqTGJQXo8qaMJYoP8VKuBGHPG3ypump';
   const SOLANA_TRACKER_API_KEY = 'ab5915df-4f94-449a-96c5-c37cbc92ef47';
-  const SOLANA_TRACKER_WS_URL = 'wss://datastream.solanatracker.io/d4fc0684-2e18-4de4-abab-cbe984738ea7';
   
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const reconnectAttempts = useRef<number>(0);
-  const reconnectDelay = 2500;
-  const reconnectDelayMax = 4500;
-  const randomizationFactor = 0.5;
+  const updateIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastUpdateTimeRef = useRef<number>(0);
 
-  // WebSocket connection management
-  const connectWebSocket = () => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      return;
+  // Real-time updates via API polling
+  const startRealTimeUpdates = () => {
+    if (updateIntervalRef.current) {
+      clearInterval(updateIntervalRef.current);
     }
-
-    console.log('Connecting to Solana Tracker WebSocket...');
-    setWsStatus('connecting');
-
-    const ws = new WebSocket(SOLANA_TRACKER_WS_URL);
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      console.log('WebSocket connected to Solana Tracker');
-      setWsStatus('connected');
-      reconnectAttempts.current = 0;
-      subscribeToPriceUpdates();
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const message = JSON.parse(event.data);
-        handleWebSocketMessage(message);
-      } catch (error) {
-        console.error('Error parsing WebSocket message:', error);
-      }
-    };
-
-    ws.onclose = () => {
-      console.log('WebSocket disconnected from Solana Tracker');
-      setWsStatus('disconnected');
-      wsRef.current = null;
-      reconnectWebSocket();
-    };
-
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      setWsStatus('disconnected');
-    };
+    
+    updateIntervalRef.current = setInterval(() => {
+      fetchLatestData();
+    }, 1000); // Update every second
+    
+    console.log('Started real-time updates (1 second interval)');
   };
 
-  const reconnectWebSocket = () => {
-    console.log('Reconnecting to WebSocket server');
-    const delay = Math.min(
-      reconnectDelay * Math.pow(2, reconnectAttempts.current),
-      reconnectDelayMax
-    );
-    const jitter = delay * randomizationFactor;
-    const reconnectDelayCalculated = delay + Math.random() * jitter;
-
-    reconnectTimeoutRef.current = setTimeout(() => {
-      reconnectAttempts.current++;
-      connectWebSocket();
-    }, reconnectDelayCalculated);
-  };
-
-  const subscribeToPriceUpdates = () => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      return;
+  const stopRealTimeUpdates = () => {
+    if (updateIntervalRef.current) {
+      clearInterval(updateIntervalRef.current);
+      updateIntervalRef.current = null;
     }
-
-    // Subscribe to price updates for the token
-    const priceSubscription = {
-      type: 'join',
-      room: `price:${TOKEN_MINT}`
-    };
-
-    wsRef.current.send(JSON.stringify(priceSubscription));
-    console.log(`Subscribed to price updates for token: ${TOKEN_MINT}`);
+    console.log('Stopped real-time updates');
   };
 
-  const handleWebSocketMessage = (message: any) => {
-    if (message.type === 'message') {
-      if (message.room === `price:${TOKEN_MINT}`) {
-        const priceData = message.data;
-        console.log('Price update received:', priceData);
-        
-        // Update current price immediately with direction
-        setCurrentPrice(prevPrice => {
-          if (prevPrice !== null) {
-            setPreviousPrice(prevPrice);
-            setPriceDirection(priceData.price > prevPrice ? 'up' : 'down');
-            // Reset direction after animation
-            setTimeout(() => setPriceDirection(null), 1000);
-          }
-          return priceData.price;
-        });
-        
-        // Update the chart with new price data
-        updateChartWithPrice(priceData);
-      }
-    }
-  };
-
-  const updateChartWithPrice = (priceData: any) => {
-    const chartPoint: ChartData = {
-      time: Math.floor(priceData.time / 1000), // Convert to seconds
-      value: priceData.price
-    };
-
-    // Add to existing data
-    setData(prevData => {
-      const newData = [...prevData, chartPoint].sort((a, b) => a.time - b.time);
-      return newData;
-    });
-
-    // Update current price is already handled above
-
-    // Update chart if series is ready
-    if (seriesRef.current) {
-      seriesRef.current.update(chartPoint);
-    }
-  };
-
-  const disconnectWebSocket = () => {
-    if (wsRef.current) {
-      // Leave the room before closing
-      const leaveSubscription = {
-        type: 'leave',
-        room: `price:${TOKEN_MINT}`
-      };
-      wsRef.current.send(JSON.stringify(leaveSubscription));
+  const fetchLatestData = async () => {
+    if (isUpdating) return; // Prevent overlapping requests
+    
+    try {
+      setIsUpdating(true);
       
-      wsRef.current.close();
-      wsRef.current = null;
-    }
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
+      // Get only the latest few data points to avoid reloading entire chart
+      const response = await fetch(
+        `https://data.solanatracker.io/chart/${TOKEN_MINT}?type=1m&limit=5`,
+        {
+          headers: {
+            'x-api-key': SOLANA_TRACKER_API_KEY,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.oclhv && Array.isArray(result.oclhv)) {
+        const newData = result.oclhv
+          .filter((item: any) => item && item.time && item.close)
+          .map((item: any) => ({
+            time: item.time,
+            value: item.close,
+          }))
+          .sort((a, b) => a.time - b.time);
+
+        if (newData.length > 0) {
+          const latestPoint = newData[newData.length - 1];
+          
+          // Only update if we have newer data
+          if (latestPoint.time > lastUpdateTimeRef.current) {
+            lastUpdateTimeRef.current = latestPoint.time;
+            
+            // Update current price with direction
+            setCurrentPrice(prevPrice => {
+              if (prevPrice !== null) {
+                setPreviousPrice(prevPrice);
+                setPriceDirection(latestPoint.value > prevPrice ? 'up' : 'down');
+                // Reset direction after animation
+                setTimeout(() => setPriceDirection(null), 1000);
+              }
+              return latestPoint.value;
+            });
+            
+            // Update chart data without resetting zoom
+            setData(prevData => {
+              const existingTimes = new Set(prevData.map(item => item.time));
+              const newPoints = newData.filter(item => !existingTimes.has(item.time));
+              
+              if (newPoints.length > 0) {
+                const updatedData = [...prevData, ...newPoints].sort((a, b) => a.time - b.time);
+                
+                // Update chart with new points only
+                newPoints.forEach(point => {
+                  if (seriesRef.current) {
+                    seriesRef.current.update(point);
+                  }
+                });
+                
+                return updatedData;
+              }
+              return prevData;
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching latest data:', error);
+      // Don't show error for real-time updates to avoid spam
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -387,12 +350,12 @@ const InteractiveChart: React.FC = () => {
     // Also fetch real data
     fetchData();
     
-    // Connect to WebSocket for live updates
-    connectWebSocket();
+    // Start real-time updates
+    startRealTimeUpdates();
     
     // Cleanup on unmount
     return () => {
-      disconnectWebSocket();
+      stopRealTimeUpdates();
     };
   }, []);
 
@@ -448,12 +411,10 @@ const InteractiveChart: React.FC = () => {
             </div>
             <div className="flex items-center space-x-2">
               <div className={`w-3 h-3 rounded-full ${
-                wsStatus === 'connected' ? 'bg-green-500' : 
-                wsStatus === 'connecting' ? 'bg-yellow-500' : 'bg-red-500'
+                isUpdating ? 'bg-yellow-500' : 'bg-green-500'
               }`}></div>
               <span className="text-sm font-medium text-gray-600">
-                {wsStatus === 'connected' ? 'Live' : 
-                 wsStatus === 'connecting' ? 'Connecting' : 'Disconnected'}
+                {isUpdating ? 'Updating...' : 'Live (1s)'}
               </span>
             </div>
           </div>
@@ -496,15 +457,18 @@ const InteractiveChart: React.FC = () => {
       {/* Footer */}
       <div className="px-4 pb-4 flex justify-between items-center">
         <div className="text-xs text-gray-500">
-          {error ? 'Sample data displayed' : 'Historical: Solana Tracker API | Live: Solana Tracker WebSocket'}
+          {error ? 'Sample data displayed' : 'Real-time updates via Solana Tracker API (1 second interval)'}
         </div>
         <div className="flex space-x-2">
           <button
-            onClick={connectWebSocket}
-            disabled={wsStatus === 'connecting'}
+            onClick={() => {
+              stopRealTimeUpdates();
+              startRealTimeUpdates();
+            }}
+            disabled={isUpdating}
             className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition-colors disabled:opacity-50"
           >
-            {wsStatus === 'connecting' ? 'Connecting...' : 'Reconnect WS'}
+            {isUpdating ? 'Updating...' : 'Restart Updates'}
           </button>
           <button
             onClick={fetchData}

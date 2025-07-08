@@ -38,7 +38,7 @@ const VotingPanel = () => {
           
           setVotingItems(tokensWithVoteStatus);
           setUserVotedTokens([]);
-          setError('Demo mode: Supabase not configured. Votes will not be saved.');
+          // setError('Demo mode: Supabase not configured. Votes will not be saved.');
           setLoading(false);
           return;
         }
@@ -118,7 +118,7 @@ const VotingPanel = () => {
         );
         
         setUserVotedTokens(prev => [...prev, tokenId]);
-        setError('Demo mode: Vote counted locally only. Configure Supabase to save votes.');
+        // setError('Demo mode: Vote counted locally only. Configure Supabase to save votes.');
         return;
       }
       

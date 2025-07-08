@@ -99,8 +99,13 @@ const setStorageItem = (key: string, value: any): void => {
 // Broadcast update to other tabs
 const broadcastUpdate = (type: string, data: any): void => {
   if (broadcastChannel) {
-    console.log('🔄 Broadcasting update to other tabs:', { type, data })
-    broadcastChannel.postMessage({ type, data })
+    try {
+      const message = { type, data }
+      console.log('🔄 Broadcasting update to other tabs:', message)
+      broadcastChannel.postMessage(message)
+    } catch (error) {
+      console.error('❌ Error broadcasting update:', error)
+    }
   } else {
     console.warn('❌ BroadcastChannel not available - no real-time updates')
   }
@@ -252,8 +257,13 @@ export const submitVote = async (tokenId: string, walletAddress?: string): Promi
     
     console.log('Vote submitted successfully to localStorage!')
     
-    // Broadcast update to other tabs
-    broadcastUpdate('vote_submitted', { tokenId, userId, newVoteCount: allVotes[tokenId] })
+    // Broadcast update to other tabs (only send serializable data)
+    broadcastUpdate('vote_submitted', { 
+      tokenId, 
+      userId, 
+      newVoteCount: allVotes[tokenId],
+      timestamp: Date.now()
+    })
     
     return true
   } catch (error) {
@@ -310,10 +320,13 @@ export const getTokenVoteCount = async (tokenId: string): Promise<number> => {
 export const testVote = async (tokenId: string = '1') => {
   console.log('🧪 Testing vote for token:', tokenId)
   try {
-    await submitVote(tokenId, 'test-user-' + Date.now())
+    const testUserId = 'test-user-' + Date.now()
+    await submitVote(tokenId, testUserId)
     console.log('✅ Test vote successful!')
+    return true
   } catch (error) {
     console.error('❌ Test vote failed:', error)
+    return false
   }
 }
 

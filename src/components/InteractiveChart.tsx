@@ -36,6 +36,7 @@ const InteractiveChart: React.FC = () => {
       });
     }
     
+    console.log('Generated sample data:', data.slice(0, 5));
     return data;
   };
 
@@ -65,11 +66,15 @@ const InteractiveChart: React.FC = () => {
       let chartData: ChartData[] = [];
       
       if (result.oclhv && Array.isArray(result.oclhv)) {
-        chartData = result.oclhv.map((item: any) => ({
-          time: item.time,
-          value: item.close, // Use close price for area chart
-        }));
+        chartData = result.oclhv
+          .filter((item: any) => item && item.time && item.close) // Filter out invalid data
+          .map((item: any) => ({
+            time: item.time,
+            value: item.close,
+          }))
+          .sort((a, b) => a.time - b.time); // Sort by time
         console.log('Processed chart data:', chartData);
+        console.log('Sample data points:', chartData.slice(0, 5));
       }
 
       // If no data or very little data, use sample data
@@ -185,22 +190,44 @@ const InteractiveChart: React.FC = () => {
   useEffect(() => {
     if (seriesRef.current && data.length > 0) {
       try {
-        console.log('Setting data to chart:', data);
+        console.log('Setting data to chart:', data.length, 'points');
+        console.log('First 3 data points:', data.slice(0, 3));
         
-        seriesRef.current.setData(data);
+        // Ensure data is properly formatted
+        const formattedData = data.map(item => ({
+          time: item.time,
+          value: Number(item.value)
+        }));
+        
+        seriesRef.current.setData(formattedData);
         
         // Fit content to show all data initially
         if (chartRef.current) {
-          chartRef.current.timeScale().fitContent();
+          setTimeout(() => {
+            chartRef.current?.timeScale().fitContent();
+          }, 100);
         }
       } catch (error) {
         console.error('Error updating chart data:', error);
       }
+    } else {
+      console.log('Chart not ready or no data:', {
+        seriesReady: !!seriesRef.current,
+        dataLength: data.length
+      });
     }
   }, [data]);
 
   // Load data on mount
   useEffect(() => {
+    // Temporary: Force sample data for testing
+    console.log('Loading sample data for testing...');
+    const sampleData = generateSampleData();
+    setData(sampleData);
+    setLastPrice(sampleData[sampleData.length - 1].value);
+    setLoading(false);
+    
+    // Also fetch real data
     fetchData();
   }, []);
 

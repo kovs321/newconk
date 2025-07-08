@@ -159,6 +159,19 @@ const InteractiveChart: React.FC = () => {
       chartRef.current = chart;
       seriesRef.current = areaSeries;
 
+      console.log('Chart initialized, series ready:', !!seriesRef.current);
+
+      // If we already have data, set it immediately
+      if (data.length > 0) {
+        console.log('Setting existing data to newly initialized chart');
+        const formattedData = data.map(item => ({
+          time: item.time,
+          value: Number(item.value)
+        }));
+        areaSeries.setData(formattedData);
+        chart.timeScale().fitContent();
+      }
+
       // Handle resize
       const handleResize = () => {
         if (chartContainerRef.current && chartRef.current) {
@@ -184,7 +197,7 @@ const InteractiveChart: React.FC = () => {
       console.error('Error initializing chart:', error);
       setError('Failed to initialize chart');
     }
-  }, []);
+  }, [data]);
 
   // Update chart data
   useEffect(() => {

@@ -94,7 +94,7 @@ const InteractiveChart: React.FC = () => {
     // Subscribe to price updates for the token
     const priceSubscription = {
       type: 'join',
-      room: `price-by-token:${TOKEN_MINT}`
+      room: `price:${TOKEN_MINT}`
     };
 
     wsRef.current.send(JSON.stringify(priceSubscription));
@@ -103,7 +103,7 @@ const InteractiveChart: React.FC = () => {
 
   const handleWebSocketMessage = (message: any) => {
     if (message.type === 'message') {
-      if (message.room === `price-by-token:${TOKEN_MINT}`) {
+      if (message.room === `price:${TOKEN_MINT}`) {
         const priceData = message.data;
         console.log('Price update received:', priceData);
         
@@ -149,7 +149,7 @@ const InteractiveChart: React.FC = () => {
       // Leave the room before closing
       const leaveSubscription = {
         type: 'leave',
-        room: `price-by-token:${TOKEN_MINT}`
+        room: `price:${TOKEN_MINT}`
       };
       wsRef.current.send(JSON.stringify(leaveSubscription));
       

@@ -129,8 +129,29 @@ serve(async (req) => {
 
     console.log('Current vote count for token:', token?.votes)
 
-    // Step 5: Force a real-time update by touching the token
-    console.log('Step 5: Triggering real-time update...')
+    // Step 5: Manually increment vote count (failsafe if trigger fails)
+    console.log('Step 5: Manually incrementing vote count as failsafe...')
+    const { data: incrementData, error: incrementError } = await supabaseClient
+      .rpc('increment_token_votes', { token_id: tokenId })
+
+    if (incrementError) {
+      console.error('Error with manual increment:', incrementError)
+      // Try direct update as final fallback
+      const { error: updateError } = await supabaseClient
+        .from('votable_tokens')
+        .update({ 
+          votes: (token?.votes || 0) + 1,
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', tokenId)
+      
+      if (updateError) {
+        console.error('Error with direct update:', updateError)
+      }
+    }
+
+    // Step 6: Force a real-time update by touching the token
+    console.log('Step 6: Triggering real-time update...')
     const { error: touchError } = await supabaseClient
       .from('votable_tokens')
       .update({ updated_at: new Date().toISOString() })

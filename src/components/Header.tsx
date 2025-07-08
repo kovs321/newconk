@@ -1,7 +1,21 @@
 
 import React, { useState, useEffect } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+
+// Safe wallet imports with error handling
+let useWallet: any;
+let WalletMultiButton: any;
+
+try {
+  const walletAdapter = require('@solana/wallet-adapter-react');
+  const walletAdapterUi = require('@solana/wallet-adapter-react-ui');
+  useWallet = walletAdapter.useWallet;
+  WalletMultiButton = walletAdapterUi.WalletMultiButton;
+} catch (e) {
+  console.warn('Wallet adapter not available, using fallback');
+  const { useWalletFallback, WalletFallback } = require('./WalletFallback');
+  useWallet = useWalletFallback;
+  WalletMultiButton = WalletFallback;
+}
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);

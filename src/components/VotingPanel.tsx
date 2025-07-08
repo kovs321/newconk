@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
 import { VotingToken, isSupabaseConfigured } from '../lib/supabase';
 import { 
   fetchVotingTokens, 
@@ -7,6 +6,18 @@ import {
   getUserVotedTokens, 
   subscribeToVotingUpdates 
 } from '../lib/voting-service';
+
+// Safe wallet imports with error handling
+let useWallet: any;
+
+try {
+  const walletAdapter = require('@solana/wallet-adapter-react');
+  useWallet = walletAdapter.useWallet;
+} catch (e) {
+  console.warn('Wallet adapter not available, using fallback');
+  const { useWalletFallback } = require('./WalletFallback');
+  useWallet = useWalletFallback;
+}
 
 interface VotingItem extends VotingToken {
   userVoted?: boolean;

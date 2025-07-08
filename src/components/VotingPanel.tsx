@@ -124,11 +124,11 @@ const VotingPanel = () => {
       // 2. Submit vote with wallet address (Supabase will handle user creation/authentication)
       await submitVote(walletAddress, tokenId);
       
-      // 3. Update local state immediately for better UX
+      // 3. Only update the userVoted flag locally (the vote count will update via real-time subscription)
       setVotingItems(prev => 
         prev.map(item => 
           item.id === tokenId 
-            ? { ...item, votes: item.votes + 1, userVoted: true }
+            ? { ...item, userVoted: true }  // Only mark as voted, don't change vote count
             : item
         )
       );
@@ -136,6 +136,7 @@ const VotingPanel = () => {
       setUserVotedTokens(prev => [...prev, tokenId]);
       
       console.log('✅ Vote successful for token:', tokenId);
+      console.log('⏳ Waiting for real-time update to show new vote count...');
       
     } catch (err: any) {
       console.error('❌ Error voting:', err);

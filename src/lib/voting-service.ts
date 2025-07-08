@@ -92,6 +92,23 @@ export const fetchVotingTokens = async (): Promise<VotingToken[]> => {
     throw error
   }
   
+  // Fetch metadata for each token
+  if (data && data.length > 0) {
+    const tokensWithMetadata = await Promise.all(
+      data.map(async (token) => {
+        const metadata = await fetchTokenMetadata(token.contract_address)
+        return {
+          ...token,
+          name: metadata.name || token.name,
+          symbol: metadata.symbol || token.symbol,
+          image: metadata.image,
+          description: metadata.description
+        }
+      })
+    )
+    return tokensWithMetadata
+  }
+  
   return data || []
 }
 

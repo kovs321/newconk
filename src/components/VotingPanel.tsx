@@ -30,6 +30,7 @@ const VotingPanel = () => {
       try {
         setLoading(true);
         setError(null);
+        console.log('Loading voting data... Supabase configured:', isSupabaseConfigured);
         
         // If Supabase is not configured, show sample data with real metadata
         if (!isSupabaseConfigured) {
@@ -51,10 +52,12 @@ const VotingPanel = () => {
         
         // Fetch tokens and user votes simultaneously
         const walletAddress = publicKey?.toString()
+        console.log('Fetching from Supabase...');
         const [tokens, userVotes] = await Promise.all([
           fetchVotingTokens(),
           getUserVotedTokens(walletAddress)
         ]);
+        console.log('Tokens from Supabase:', tokens);
         
         // Mark tokens that user has voted for
         const tokensWithVoteStatus = tokens.map(token => ({
@@ -160,6 +163,8 @@ const VotingPanel = () => {
 
   // Calculate total votes for percentage calculation
   const totalVotes = votingItems.reduce((sum, item) => sum + item.votes, 0);
+  
+  console.log('VotingPanel - items loaded:', votingItems.length, votingItems);
 
   if (loading) {
     return (

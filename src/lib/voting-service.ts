@@ -224,7 +224,7 @@ export const submitVote = async (tokenId: string, walletAddress?: string): Promi
   const userId = getCurrentUserId(walletAddress)
   
   try {
-    console.log('Attempting to submit vote:', { tokenId, userId, walletAddress })
+    console.log('Attempting to submit vote:', { tokenId, userId: userId.substring(0, 10) + '...' })
     
     // Check if user already voted
     const alreadyVoted = await hasUserVoted(tokenId, walletAddress)
@@ -257,11 +257,11 @@ export const submitVote = async (tokenId: string, walletAddress?: string): Promi
     
     console.log('Vote submitted successfully to localStorage!')
     
-    // Broadcast update to other tabs (only send serializable data)
+    // Broadcast update to other tabs (send only primitive data)
+    const voteCount = allVotes[tokenId]
     broadcastUpdate('vote_submitted', { 
-      tokenId, 
-      userId, 
-      newVoteCount: allVotes[tokenId],
+      tokenId: String(tokenId), 
+      newVoteCount: Number(voteCount),
       timestamp: Date.now()
     })
     
@@ -330,9 +330,29 @@ export const testVote = async (tokenId: string = '1') => {
   }
 }
 
+// Simple test function for BroadcastChannel
+export const testBroadcast = () => {
+  console.log('🧪 Testing BroadcastChannel...')
+  if (broadcastChannel) {
+    console.log('✅ BroadcastChannel available')
+    try {
+      broadcastChannel.postMessage({ 
+        type: 'test', 
+        data: { message: 'hello', timestamp: Date.now() } 
+      })
+      console.log('✅ Test message sent')
+    } catch (error) {
+      console.error('❌ Error sending test message:', error)
+    }
+  } else {
+    console.error('❌ BroadcastChannel not available')
+  }
+}
+
 // Export for console access
 if (typeof window !== 'undefined') {
   (window as any).testVote = testVote
+  (window as any).testBroadcast = testBroadcast
   (window as any).getVotes = () => getStorageItem(VOTES_STORAGE_KEY)
   (window as any).clearVotes = () => {
     localStorage.removeItem(VOTES_STORAGE_KEY)

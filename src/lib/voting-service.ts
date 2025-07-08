@@ -69,45 +69,49 @@ const VOTES_STORAGE_KEY = 'bonk_strategy_votes'
 const TOKENS_STORAGE_KEY = 'bonk_strategy_tokens'
 const USER_VOTES_STORAGE_KEY = 'bonk_strategy_user_votes'
 
-// BroadcastChannel for real-time updates across tabs
-let broadcastChannel: BroadcastChannel | null = null
+// Simple in-memory storage for voting (fallback)
+let inMemoryVotes: { [key: string]: number } = {}
+let inMemoryUserVotes: { [key: string]: string[] } = {}
 
-// Initialize BroadcastChannel if supported
-if (typeof BroadcastChannel !== 'undefined') {
-  broadcastChannel = new BroadcastChannel('bonk_voting_updates')
+// Initialize simple storage
+const initializeSimpleStorage = () => {
+  console.log('🔄 Initializing simple voting storage...')
+  inMemoryVotes = {}
+  inMemoryUserVotes = {}
 }
 
-// Storage helpers
+// Simple storage helpers (in-memory fallback)
 const getStorageItem = (key: string): any => {
   try {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      // Use in-memory storage
+      if (key === VOTES_STORAGE_KEY) return inMemoryVotes
+      if (key === USER_VOTES_STORAGE_KEY) return inMemoryUserVotes
+      return null
+    }
     const item = localStorage.getItem(key)
     return item ? JSON.parse(item) : null
   } catch (error) {
-    console.error('Error reading from localStorage:', error)
+    console.error('Error reading from localStorage, using in-memory:', error)
+    if (key === VOTES_STORAGE_KEY) return inMemoryVotes
+    if (key === USER_VOTES_STORAGE_KEY) return inMemoryUserVotes
     return null
   }
 }
 
 const setStorageItem = (key: string, value: any): void => {
   try {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      // Use in-memory storage
+      if (key === VOTES_STORAGE_KEY) inMemoryVotes = value
+      if (key === USER_VOTES_STORAGE_KEY) inMemoryUserVotes = value
+      return
+    }
     localStorage.setItem(key, JSON.stringify(value))
   } catch (error) {
-    console.error('Error writing to localStorage:', error)
-  }
-}
-
-// Broadcast update to other tabs
-const broadcastUpdate = (type: string, data: any): void => {
-  if (broadcastChannel) {
-    try {
-      const message = { type, data }
-      console.log('🔄 Broadcasting update to other tabs:', message)
-      broadcastChannel.postMessage(message)
-    } catch (error) {
-      console.error('❌ Error broadcasting update:', error)
-    }
-  } else {
-    console.warn('❌ BroadcastChannel not available - no real-time updates')
+    console.error('Error writing to localStorage, using in-memory:', error)
+    if (key === VOTES_STORAGE_KEY) inMemoryVotes = value
+    if (key === USER_VOTES_STORAGE_KEY) inMemoryUserVotes = value
   }
 }
 
@@ -118,53 +122,67 @@ export const getCurrentUserId = (walletAddress?: string): string => {
   }
   
   // Fallback to localStorage for demo mode
-  const existingId = localStorage.getItem('voting_user_id')
-  if (existingId) return existingId
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const existingId = localStorage.getItem('voting_user_id')
+      if (existingId) return existingId
+      
+      // Generate new ID and store it
+      const newId = crypto.randomUUID()
+      localStorage.setItem('voting_user_id', newId)
+      return newId
+    } catch (error) {
+      console.error('Error with localStorage for user ID:', error)
+    }
+  }
   
-  // Generate new ID and store it
-  const newId = crypto.randomUUID()
-  localStorage.setItem('voting_user_id', newId)
-  return newId
+  // Final fallback if localStorage is not available
+  return 'anonymous-user-' + Date.now()
 }
 
 // Initialize voting tokens in localStorage if they don't exist
 export const initializeVotingTokens = async (): Promise<void> => {
-  console.log('Checking if voting tokens exist in localStorage...')
-  
-  const existingTokens = getStorageItem(TOKENS_STORAGE_KEY)
-  
-  if (!existingTokens || existingTokens.length === 0) {
-    console.log('No tokens found, initializing with sample data...')
+  try {
+    console.log('Checking if voting tokens exist in localStorage...')
     
-    // Create tokens with metadata
-    const tokensToInsert = await Promise.all(
-      VOTING_TOKEN_ADDRESSES.map(async (address, index) => {
-        const metadata = await fetchTokenMetadata(address)
-        return {
-          id: `${index + 1}`,
-          symbol: metadata.symbol,
-          name: metadata.name,
-          contract_address: address,
-          votes: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          image: metadata.image,
-          description: metadata.description
-        }
-      })
-    )
+    const existingTokens = getStorageItem(TOKENS_STORAGE_KEY)
     
-    console.log('Storing tokens in localStorage:', tokensToInsert)
-    
-    setStorageItem(TOKENS_STORAGE_KEY, tokensToInsert)
-    
-    // Initialize empty votes storage
-    setStorageItem(VOTES_STORAGE_KEY, {})
-    setStorageItem(USER_VOTES_STORAGE_KEY, {})
-    
-    console.log('Tokens initialized successfully!')
-  } else {
-    console.log('Tokens already exist in localStorage:', existingTokens.length)
+    if (!existingTokens || existingTokens.length === 0) {
+      console.log('No tokens found, initializing with sample data...')
+      
+      // Create tokens with metadata
+      const tokensToInsert = await Promise.all(
+        VOTING_TOKEN_ADDRESSES.map(async (address, index) => {
+          const metadata = await fetchTokenMetadata(address)
+          return {
+            id: `${index + 1}`,
+            symbol: metadata.symbol,
+            name: metadata.name,
+            contract_address: address,
+            votes: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            image: metadata.image,
+            description: metadata.description
+          }
+        })
+      )
+      
+      console.log('Storing tokens in localStorage:', tokensToInsert)
+      
+      setStorageItem(TOKENS_STORAGE_KEY, tokensToInsert)
+      
+      // Initialize empty votes storage
+      setStorageItem(VOTES_STORAGE_KEY, {})
+      setStorageItem(USER_VOTES_STORAGE_KEY, {})
+      
+      console.log('Tokens initialized successfully!')
+    } else {
+      console.log('Tokens already exist in localStorage:', existingTokens.length)
+    }
+  } catch (error) {
+    console.error('Error initializing voting tokens:', error)
+    // Don't throw error, just log it
   }
 }
 
@@ -255,15 +273,7 @@ export const submitVote = async (tokenId: string, walletAddress?: string): Promi
     // Save updated vote counts
     setStorageItem(VOTES_STORAGE_KEY, allVotes)
     
-    console.log('Vote submitted successfully to localStorage!')
-    
-    // Broadcast update to other tabs (send only primitive data)
-    const voteCount = allVotes[tokenId]
-    broadcastUpdate('vote_submitted', { 
-      tokenId: String(tokenId), 
-      newVoteCount: Number(voteCount),
-      timestamp: Date.now()
-    })
+    console.log('Vote submitted successfully!')
     
     return true
   } catch (error) {
@@ -272,40 +282,17 @@ export const submitVote = async (tokenId: string, walletAddress?: string): Promi
   }
 }
 
-// Subscribe to real-time voting updates
+// Subscribe to voting updates (simplified)
 export const subscribeToVotingUpdates = (
   callback: (tokens: VotingToken[]) => void
 ) => {
-  console.log('Setting up real-time subscription with BroadcastChannel...')
+  console.log('Setting up simple voting subscription...')
   
-  if (!broadcastChannel) {
-    console.warn('BroadcastChannel not supported, real-time updates disabled')
-    return { unsubscribe: () => {} }
-  }
-  
-  const handleMessage = async (event: MessageEvent) => {
-    console.log('📨 Real-time update received in tab:', event.data)
-    
-    if (event.data.type === 'vote_submitted') {
-      console.log('🗳️ Vote update received, refreshing tokens...')
-      // Refresh tokens when votes are cast
-      try {
-        const tokens = await fetchVotingTokens()
-        console.log('✅ Tokens refreshed successfully:', tokens.length)
-        callback(tokens)
-      } catch (error) {
-        console.error('Error fetching updated tokens:', error)
-      }
-    }
-  }
-  
-  broadcastChannel.addEventListener('message', handleMessage)
-  
+  // For now, just return a dummy subscription
+  // Real-time updates will be handled by the UI refresh after voting
   return {
     unsubscribe: () => {
-      if (broadcastChannel) {
-        broadcastChannel.removeEventListener('message', handleMessage)
-      }
+      console.log('Unsubscribed from voting updates')
     }
   }
 }
@@ -330,34 +317,20 @@ export const testVote = async (tokenId: string = '1') => {
   }
 }
 
-// Simple test function for BroadcastChannel
-export const testBroadcast = () => {
-  console.log('🧪 Testing BroadcastChannel...')
-  if (broadcastChannel) {
-    console.log('✅ BroadcastChannel available')
-    try {
-      broadcastChannel.postMessage({ 
-        type: 'test', 
-        data: { message: 'hello', timestamp: Date.now() } 
-      })
-      console.log('✅ Test message sent')
-    } catch (error) {
-      console.error('❌ Error sending test message:', error)
-    }
-  } else {
-    console.error('❌ BroadcastChannel not available')
-  }
-}
-
 // Export for console access
 if (typeof window !== 'undefined') {
   (window as any).testVote = testVote
-  (window as any).testBroadcast = testBroadcast
   (window as any).getVotes = () => getStorageItem(VOTES_STORAGE_KEY)
   (window as any).clearVotes = () => {
-    localStorage.removeItem(VOTES_STORAGE_KEY)
-    localStorage.removeItem(USER_VOTES_STORAGE_KEY)
-    localStorage.removeItem(TOKENS_STORAGE_KEY)
-    console.log('🗑️ All votes cleared!')
+    try {
+      localStorage.removeItem(VOTES_STORAGE_KEY)
+      localStorage.removeItem(USER_VOTES_STORAGE_KEY)
+      localStorage.removeItem(TOKENS_STORAGE_KEY)
+      console.log('🗑️ All votes cleared!')
+    } catch (error) {
+      console.log('🗑️ Memory votes cleared!')
+      inMemoryVotes = {}
+      inMemoryUserVotes = {}
+    }
   }
 }

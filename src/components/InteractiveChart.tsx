@@ -111,6 +111,17 @@ const InteractiveChart: React.FC = () => {
                   }
                 });
                 
+                // Keep the chart focused on recent data (last 6 hours)
+                if (chartRef.current && newPoints.length > 0) {
+                  const latestTime = newPoints[newPoints.length - 1].time;
+                  const sixHoursAgo = latestTime - (6 * 60 * 60);
+                  
+                  chartRef.current.timeScale().setVisibleRange({
+                    from: sixHoursAgo,
+                    to: latestTime + (30 * 60)
+                  });
+                }
+                
                 const updatedData = [...prevData, ...newPoints].sort((a, b) => a.time - b.time);
                 return updatedData;
               }
@@ -236,6 +247,11 @@ const InteractiveChart: React.FC = () => {
         },
         rightPriceScale: {
           scaleMargins: { top: 0.1, bottom: 0.1 },
+          borderVisible: true,
+          borderColor: '#D1D5DB',
+          textColor: '#333333',
+          entireTextOnly: false,
+          ticksVisible: true,
         },
         handleScroll: {
           mouseWheel: true,
@@ -250,7 +266,14 @@ const InteractiveChart: React.FC = () => {
       const areaSeries = chart.addSeries(AreaSeries, { 
         lineColor: '#2962FF', 
         topColor: '#2962FF', 
-        bottomColor: 'rgba(41, 98, 255, 0.28)' 
+        bottomColor: 'rgba(41, 98, 255, 0.28)',
+        priceFormat: {
+          type: 'price',
+          precision: 9,
+          minMove: 0.000000001,
+        },
+        priceLineVisible: true,
+        lastValueVisible: true,
       });
 
       // Set data immediately
@@ -260,7 +283,17 @@ const InteractiveChart: React.FC = () => {
       }));
       
       areaSeries.setData(formattedData);
-      chart.timeScale().fitContent();
+      
+      // Set initial zoom to show last 6 hours instead of full dataset
+      if (formattedData.length > 0) {
+        const lastTime = formattedData[formattedData.length - 1].time;
+        const sixHoursAgo = lastTime - (6 * 60 * 60); // 6 hours in seconds
+        
+        chart.timeScale().setVisibleRange({
+          from: sixHoursAgo,
+          to: lastTime + (30 * 60) // Add 30 minutes buffer
+        });
+      }
 
       chartRef.current = chart;
       seriesRef.current = areaSeries;

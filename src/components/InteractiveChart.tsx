@@ -295,33 +295,25 @@ const InteractiveChart: React.FC = () => {
       console.error('Error initializing chart:', error);
       setError('Failed to initialize chart');
     }
-  }, []); // Remove data dependency!
+  }, []); // Initialize chart only once
 
-  // Update chart data (only for initial load)
+  // Update chart with data when both chart and data are ready
   useEffect(() => {
     if (seriesRef.current && data.length > 0) {
-      try {
-        console.log('Setting initial data to chart:', data.length, 'points');
-        
-        // Ensure data is properly formatted
-        const formattedData = data.map(item => ({
-          time: item.time,
-          value: Number(item.value)
-        }));
-        
-        seriesRef.current.setData(formattedData);
-        
-        // Fit content to show all data initially
-        if (chartRef.current) {
-          setTimeout(() => {
-            chartRef.current?.timeScale().fitContent();
-          }, 100);
-        }
-      } catch (error) {
-        console.error('Error updating chart data:', error);
+      console.log('Setting data to chart:', data.length, 'points');
+      
+      const formattedData = data.map(item => ({
+        time: item.time,
+        value: Number(item.value)
+      }));
+      
+      seriesRef.current.setData(formattedData);
+      
+      if (chartRef.current) {
+        chartRef.current.timeScale().fitContent();
       }
     }
-  }, [data.length]); // Only trigger when data length changes (initial load)
+  }, [data]);
 
   // Load data on mount
   useEffect(() => {
@@ -393,14 +385,6 @@ const InteractiveChart: React.FC = () => {
                   </span>
                 )}
               </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className={`w-3 h-3 rounded-full ${
-                isUpdating ? 'bg-yellow-500' : 'bg-green-500'
-              }`}></div>
-              <span className="text-sm font-medium text-gray-600">
-                {isUpdating ? 'Updating...' : 'Live (1s)'}
-              </span>
             </div>
           </div>
         </div>

@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { createChart, CandlestickSeries } from 'lightweight-charts';
 
 interface ChartData {
   time: number;
@@ -10,8 +9,8 @@ interface ChartData {
   volume: number;
 }
 
-const SimpleLiveChart: React.FC = () => {
-  const chartContainerRef = useRef<HTMLDivElement>(null);
+const BasicChart: React.FC = () => {
+  const chartRef = useRef<HTMLCanvasElement>(null);
   const [data, setData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,21 +19,17 @@ const SimpleLiveChart: React.FC = () => {
   const TOKEN_MINT = '9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump';
   const SOLANA_TRACKER_API_KEY = 'ab5915df-4f94-449a-96c5-c37cbc92ef47';
 
-  // Generate sample data that looks realistic
+  // Generate sample data
   const generateSampleData = (): ChartData[] => {
     const data: ChartData[] = [];
-    let price = 1.17; // Starting price
+    let price = 1.17;
     const now = Math.floor(Date.now() / 1000);
     
-    for (let i = 100; i >= 0; i--) {
-      const time = now - (i * 60); // 1 minute intervals
-      const volatility = 0.02; // 2% volatility
-      const trend = -0.0001; // Slight downward trend
-      
-      const change = (Math.random() - 0.5) * volatility + trend;
+    for (let i = 50; i >= 0; i--) {
+      const time = now - (i * 60);
+      const change = (Math.random() - 0.5) * 0.02;
       const open = price;
       const close = price + change;
-      
       const high = Math.max(open, close) + Math.random() * 0.01;
       const low = Math.min(open, close) - Math.random() * 0.01;
       const volume = Math.random() * 5000 + 1000;
@@ -54,14 +49,14 @@ const SimpleLiveChart: React.FC = () => {
     return data;
   };
 
-  // Fetch data from Solana Tracker API
+  // Fetch data from API
   const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
 
       const response = await fetch(
-        `https://data.solanatracker.io/chart/${TOKEN_MINT}?type=1m&limit=100`,
+        `https://data.solanatracker.io/chart/${TOKEN_MINT}?type=1m&limit=50`,
         {
           headers: {
             'x-api-key': SOLANA_TRACKER_API_KEY,
@@ -88,9 +83,7 @@ const SimpleLiveChart: React.FC = () => {
         }));
       }
 
-      // If no data or very little data, use sample data
       if (chartData.length < 10) {
-        console.log('Using sample data due to insufficient API data');
         chartData = generateSampleData();
       }
 
@@ -102,7 +95,6 @@ const SimpleLiveChart: React.FC = () => {
       console.error('Error fetching data:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch data');
       
-      // Use sample data on error
       const sampleData = generateSampleData();
       setData(sampleData);
       setLastPrice(sampleData[sampleData.length - 1].close);
@@ -111,66 +103,100 @@ const SimpleLiveChart: React.FC = () => {
     }
   };
 
-  // Initialize chart
-  useEffect(() => {
-    if (!chartContainerRef.current || data.length === 0) return;
+  // Draw simple line chart
+  const drawChart = () => {
+    if (!chartRef.current || data.length === 0) return;
 
-    const chart = createChart(chartContainerRef.current, {
-      width: chartContainerRef.current.clientWidth,
-      height: 300,
-      layout: {
-        backgroundColor: '#ffffff',
-        textColor: '#333333',
-        fontSize: 12,
-      },
-      grid: {
-        vertLines: { color: '#f0f3fa' },
-        horzLines: { color: '#f0f3fa' },
-      },
-      crosshair: {
-        mode: 1,
-      },
-      timeScale: {
-        timeVisible: true,
-        secondsVisible: false,
-      },
-      rightPriceScale: {
-        scaleMargins: {
-          top: 0.1,
-          bottom: 0.1,
-        },
-      },
-    });
+    const canvas = chartRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-    const candlestickSeries = chart.addSeries(CandlestickSeries, {
-      upColor: '#10B981',
-      downColor: '#EF4444',
-      borderVisible: false,
-      wickUpColor: '#10B981',
-      wickDownColor: '#EF4444',
-    });
+    const width = canvas.width;
+    const height = canvas.height;
 
-    candlestickSeries.setData(data);
-    chart.timeScale().fitContent();
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
 
-    const handleResize = () => {
-      if (chartContainerRef.current) {
-        chart.applyOptions({ width: chartContainerRef.current.clientWidth });
+    // Get price range
+    const prices = data.map(d => d.close);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const priceRange = maxPrice - minPrice;
+
+    // Draw background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+
+    // Draw grid
+    ctx.strokeStyle = '#f0f3fa';
+    ctx.lineWidth = 1;
+    
+    // Horizontal grid lines
+    for (let i = 0; i <= 5; i++) {
+      const y = (height / 5) * i;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+
+    // Vertical grid lines
+    for (let i = 0; i <= 10; i++) {
+      const x = (width / 10) * i;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    }
+
+    // Draw price line
+    ctx.strokeStyle = '#10B981';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+
+    data.forEach((point, index) => {
+      const x = (index / (data.length - 1)) * width;
+      const y = height - ((point.close - minPrice) / priceRange) * height;
+      
+      if (index === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
       }
-    };
+    });
 
-    window.addEventListener('resize', handleResize);
+    ctx.stroke();
 
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      chart.remove();
-    };
-  }, [data]);
+    // Draw data points
+    ctx.fillStyle = '#10B981';
+    data.forEach((point, index) => {
+      const x = (index / (data.length - 1)) * width;
+      const y = height - ((point.close - minPrice) / priceRange) * height;
+      
+      ctx.beginPath();
+      ctx.arc(x, y, 2, 0, 2 * Math.PI);
+      ctx.fill();
+    });
 
-  // Load data on component mount
+    // Draw price labels
+    ctx.fillStyle = '#666';
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'right';
+    
+    for (let i = 0; i <= 5; i++) {
+      const price = minPrice + (priceRange * i / 5);
+      const y = height - (height / 5) * i;
+      ctx.fillText(price.toFixed(6), width - 5, y - 5);
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    drawChart();
+  }, [data]);
 
   const formatPrice = (price: number | null) => {
     if (price === null) return '--';
@@ -193,8 +219,8 @@ const SimpleLiveChart: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Live Token Chart</h3>
-          <p className="text-sm text-gray-600">Real-time price data</p>
+          <h3 className="text-lg font-semibold text-gray-900">Token Price Chart</h3>
+          <p className="text-sm text-gray-600">Live price tracking</p>
         </div>
         <div className="text-right">
           <div className="text-xl font-bold text-gray-900">
@@ -217,7 +243,13 @@ const SimpleLiveChart: React.FC = () => {
       )}
 
       {/* Chart */}
-      <div ref={chartContainerRef} className="w-full h-80" />
+      <canvas
+        ref={chartRef}
+        width={800}
+        height={300}
+        className="w-full h-80 border border-gray-200 rounded-lg"
+        style={{ maxWidth: '100%' }}
+      />
 
       {/* Controls */}
       <div className="mt-4 flex justify-between items-center">
@@ -236,4 +268,4 @@ const SimpleLiveChart: React.FC = () => {
   );
 };
 
-export default SimpleLiveChart;
+export default BasicChart;

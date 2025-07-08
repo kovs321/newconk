@@ -14,7 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      user_votes: {
+        Row: {
+          id: string
+          token_id: string
+          user_id: string
+          voted_at: string | null
+        }
+        Insert: {
+          id?: string
+          token_id: string
+          user_id: string
+          voted_at?: string | null
+        }
+        Update: {
+          id?: string
+          token_id?: string
+          user_id?: string
+          voted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_votes_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "voting_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      voting_tokens: {
+        Row: {
+          contract_address: string
+          created_at: string | null
+          id: string
+          name: string
+          symbol: string
+          updated_at: string | null
+          votes: number | null
+        }
+        Insert: {
+          contract_address: string
+          created_at?: string | null
+          id?: string
+          name: string
+          symbol: string
+          updated_at?: string | null
+          votes?: number | null
+        }
+        Update: {
+          contract_address?: string
+          created_at?: string | null
+          id?: string
+          name?: string
+          symbol?: string
+          updated_at?: string | null
+          votes?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -19,7 +19,7 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				sans: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'system-ui', 'sans-serif'],
+				sans: ['Nunito', 'SF Pro Rounded', '-apple-system', 'BlinkMacSystemFont', 'Helvetica Neue', 'Segoe UI', 'system-ui', 'sans-serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',

@@ -2,6 +2,7 @@
 import React from 'react';
 import TokenDistributionChart from '../components/TokenDistributionChart';
 import PerformanceChart from '../components/PerformanceChart';
+import VolumeChart from '../components/VolumeChart';
 import VotingPanel from '../components/VotingPanel';
 import PitchDeck from '../components/PitchDeck';
 import HowItWorks from '../components/HowItWorks';
@@ -26,21 +27,34 @@ const Index = () => {
 
         {/* Charts Section */}
         <section id="charts" className="py-12 px-4">
-          <div className="container mx-auto">
-            <div className="grid md:grid-cols-2 gap-6 max-w-6xl mx-auto">
-              {/* Token Distribution Chart */}
-              <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Token Distribution</h3>
-                <div className="h-64">
-                  <TokenDistributionChart />
+          <div className="container mx-auto max-w-7xl">
+            <div className="grid lg:grid-cols-3 gap-6">
+              {/* Left Column - Two charts stacked */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Strategy Performance Chart */}
+                <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Strategy Performance</h3>
+                  <div className="h-64">
+                    <PerformanceChart />
+                  </div>
+                </div>
+                
+                {/* Volume Chart */}
+                <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Trading Volume</h3>
+                  <div className="h-64">
+                    <VolumeChart />
+                  </div>
                 </div>
               </div>
               
-              {/* Performance Chart */}
-              <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Strategy Performance</h3>
-                <div className="h-64">
-                  <PerformanceChart />
+              {/* Right Column - Token Distribution */}
+              <div className="lg:col-span-1">
+                <div className="bg-gray-50 rounded-lg p-6 shadow-sm h-full">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Token Distribution</h3>
+                  <div className="h-96 lg:h-full min-h-[400px]">
+                    <TokenDistributionChart />
+                  </div>
                 </div>
               </div>
             </div>

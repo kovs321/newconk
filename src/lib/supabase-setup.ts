@@ -52,35 +52,17 @@ export const checkTablesExist = async () => {
 
 // Insert sample BONK tokens
 export const insertSampleTokens = async () => {
-  console.log('🪙 Inserting sample BONK tokens...')
+  console.log('🪙 Inserting voting tokens with metadata...')
   
-  const sampleTokens = [
-    {
-      symbol: 'BONK',
-      name: 'Bonk Token',
-      contract_address: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263'
-    },
-    {
-      symbol: 'SAMO',
-      name: 'Samoyedcoin',
-      contract_address: 'X6y9bV1V5pMKGfXVwWy1xq1m9xGxJrAFrQQWbGfkSuq'
-    },
-    {
-      symbol: 'WIF',
-      name: 'Dogwifhat',
-      contract_address: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm'
-    },
-    {
-      symbol: 'POPCAT',
-      name: 'Popcat Token',
-      contract_address: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKZNqJ8YoWKpQqZs'
-    },
-    {
-      symbol: 'PNUT',
-      name: 'Peanut Token',
-      contract_address: 'pnuTzKNjkgTCKZhcUYJZ6tQFaYSBKZNqJ8YoWKpQqZs'
-    }
-  ]
+  // Import the function to get tokens with metadata
+  const { createSampleTokensWithMetadata } = await import('./voting-service')
+  const tokensWithMetadata = await createSampleTokensWithMetadata()
+  
+  const sampleTokens = tokensWithMetadata.map(token => ({
+    symbol: token.symbol,
+    name: token.name,
+    contract_address: token.contract_address
+  }))
 
   try {
     // Check if tokens already exist

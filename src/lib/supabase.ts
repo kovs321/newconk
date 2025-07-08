@@ -30,6 +30,8 @@ export interface VotingToken {
   votes: number
   created_at: string
   updated_at: string
+  image?: string
+  description?: string
 }
 
 export interface UserVote {

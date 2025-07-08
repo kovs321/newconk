@@ -1,4 +1,68 @@
-import { supabase, VotingToken, UserVote } from './supabase'
+import { supabase, VotingToken, UserVote, isSupabaseConfigured } from './supabase'
+
+// Token addresses to vote for
+const VOTING_TOKEN_ADDRESSES = [
+  'Fg2Z4usj7UU99XmWV7H7EYnY2LHS7jmvA1qZ9q7nbqvQ',
+  'Dkxs6nvfEqM84g1mybKL8oPWoUUawXaQNM2s2jwTbonk',
+  '94cD37ipFfAcMDBgtpr5gYYXsJWfFbLruZtEW5DTbonk',
+  '5ZH17JHVyYZy5QFnXyRawfj4mrieyKZihr7K88debonk',
+  'DqRB2BZUfWFX8ZbCQvjWFor8KQTohaiTynSsYafbonk'
+]
+
+const SOLANA_TRACKER_API_KEY = 'ab5915df-4f94-449a-96c5-c37cbc92ef47'
+
+// Fetch token metadata from Solana Tracker API
+const fetchTokenMetadata = async (tokenAddress: string) => {
+  try {
+    const response = await fetch(`https://data.solanatracker.io/tokens/${tokenAddress}`, {
+      headers: {
+        'x-api-key': SOLANA_TRACKER_API_KEY,
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    return {
+      name: data.token.name,
+      symbol: data.token.symbol,
+      image: data.token.image,
+      description: data.token.description || '',
+    }
+  } catch (error) {
+    console.error(`Error fetching metadata for ${tokenAddress}:`, error)
+    return {
+      name: tokenAddress.slice(0, 8) + '...',
+      symbol: tokenAddress.slice(0, 6),
+      image: '',
+      description: 'Token metadata unavailable',
+    }
+  }
+}
+
+// Create sample tokens with metadata
+export const createSampleTokensWithMetadata = async (): Promise<VotingToken[]> => {
+  const tokens = await Promise.all(
+    VOTING_TOKEN_ADDRESSES.map(async (address, index) => {
+      const metadata = await fetchTokenMetadata(address)
+      return {
+        id: `${index + 1}`,
+        symbol: metadata.symbol,
+        name: metadata.name,
+        contract_address: address,
+        votes: Math.floor(Math.random() * 2000) + 500, // Random votes between 500-2500
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        image: metadata.image,
+        description: metadata.description,
+      }
+    })
+  )
+  
+  return tokens
+}
 
 // Generate a unique user ID (could be wallet address or session-based)
 export const generateUserId = (): string => {

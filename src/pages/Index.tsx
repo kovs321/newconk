@@ -20,7 +20,7 @@ const Index = () => {
         {/* Hero Section */}
         <section className="py-12 px-4">
           <div className="container mx-auto text-center">
-            <h2 className="text-5xl font-bold text-gray-900 mb-4">BONK STRATEGY</h2>
+            <h2 className="text-5xl font-black text-gray-900 mb-4">BONK STRATEGY</h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               Diversified token rewards distribution strategy with community-driven governance
             </p>
@@ -47,7 +47,7 @@ const Index = () => {
               {/* Right Column - Token Distribution */}
               <div className="lg:col-span-1">
                 <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Token Distribution</h3>
+                  <h3 className="text-lg font-black text-gray-900 mb-4">Token Distribution</h3>
                   <div className="h-80">
                     <TokenDistributionChart />
                   </div>
@@ -61,7 +61,7 @@ const Index = () => {
         <section id="voting" className="py-12 px-4 bg-gray-50">
           <div className="container mx-auto max-w-4xl">
             <div className="bg-white rounded-lg p-8 shadow-sm">
-              <h3 className="text-2xl font-semibold text-gray-900 mb-6">Vote for New Tokens</h3>
+              <h3 className="text-2xl font-black text-gray-900 mb-6">Vote for New Tokens</h3>
               <VotingPanel />
             </div>
           </div>
@@ -71,7 +71,7 @@ const Index = () => {
         <section id="pitch" className="py-12 px-4">
           <div className="container mx-auto max-w-6xl">
             <div className="bg-gray-50 rounded-lg p-8 shadow-sm">
-              <h3 className="text-2xl font-semibold text-gray-900 mb-6 text-center">Pitch Deck</h3>
+              <h3 className="text-2xl font-black text-gray-900 mb-6 text-center">Pitch Deck</h3>
               <PitchDeck />
             </div>
           </div>
@@ -80,7 +80,7 @@ const Index = () => {
         {/* How It Works */}
         <section id="how" className="py-12 px-4 bg-gray-50">
           <div className="container mx-auto max-w-6xl">
-            <h3 className="text-2xl font-semibold text-gray-900 text-center mb-8">How It Works</h3>
+            <h3 className="text-2xl font-black text-gray-900 text-center mb-8">How It Works</h3>
             <HowItWorks />
           </div>
         </section>

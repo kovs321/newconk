@@ -25,15 +25,11 @@ const VotingPanel = () => {
         setLoading(true);
         setError(null);
         
-        // If Supabase is not configured, show sample data
+        // If Supabase is not configured, show sample data with real metadata
         if (!isSupabaseConfigured) {
-          console.log('Supabase not configured, showing sample data');
-          const sampleTokens = [
-            { id: '1', symbol: 'BONK', name: 'Bonk Token', contract_address: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', votes: 1250, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-            { id: '2', symbol: 'SAMO', name: 'Samoyedcoin', contract_address: 'X6y9bV1V5pMKGfXVwWy1xq1m9xGxJrAFrQQWbGfkSuq', votes: 1800, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-            { id: '3', symbol: 'WIF', name: 'Dogwifhat', contract_address: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm', votes: 980, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-            { id: '4', symbol: 'POPCAT', name: 'Popcat Token', contract_address: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKZNqJ8YoWKpQqZs', votes: 970, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-          ];
+          console.log('Supabase not configured, fetching token metadata for demo...');
+          const { createSampleTokensWithMetadata } = await import('../lib/voting-service');
+          const sampleTokens = await createSampleTokensWithMetadata();
           
           const tokensWithVoteStatus = sampleTokens.map(token => ({
             ...token,
@@ -190,12 +186,29 @@ const VotingPanel = () => {
           <div key={item.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                  <span className="text-orange-600 font-bold text-sm">{item.symbol}</span>
+                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center overflow-hidden">
+                  {item.image ? (
+                    <img 
+                      src={item.image} 
+                      alt={item.name}
+                      className="w-full h-full object-cover rounded-full"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextElementSibling!.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <span 
+                    className="text-orange-600 font-bold text-sm flex items-center justify-center w-full h-full"
+                    style={{ display: item.image ? 'none' : 'flex' }}
+                  >
+                    {item.symbol}
+                  </span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900">{item.name}</h4>
+                  <h4 className="font-black text-gray-900">{item.name}</h4>
                   <p className="text-sm text-gray-500">{item.symbol}</p>
+                  <p className="text-xs text-gray-400 mt-1">{item.contract_address.slice(0, 8)}...{item.contract_address.slice(-6)}</p>
                 </div>
               </div>
               <div className="text-right">

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { createChart, BaselineSeries, IChartApi, ISeriesApi } from 'lightweight-charts';
+import { createChart, HistogramSeries, IChartApi, ISeriesApi } from 'lightweight-charts';
 
 interface PriceData {
   time: number;
@@ -9,7 +9,7 @@ interface PriceData {
 const LiveWebSocketChart: React.FC = () => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const seriesRef = useRef<ISeriesApi<'Baseline'> | null>(null);
+  const seriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttempts = useRef<number>(0);
@@ -69,15 +69,8 @@ const LiveWebSocketChart: React.FC = () => {
         },
       });
       
-      const baselineSeries = chart.addSeries(BaselineSeries, { 
-        baseValue: { type: 'price', value: 0.000001 },
-        topLineColor: '#00D2FF',
-        bottomLineColor: '#00D2FF',
-        topFillColor1: 'rgba(0, 210, 255, 0.28)',
-        topFillColor2: 'rgba(0, 210, 255, 0.05)',
-        bottomFillColor1: 'rgba(255, 82, 82, 0.28)',
-        bottomFillColor2: 'rgba(255, 82, 82, 0.05)',
-        lineWidth: 2,
+      const histogramSeries = chart.addSeries(HistogramSeries, { 
+        color: '#26a69a',
         priceFormat: {
           type: 'price',
           precision: 8,
@@ -89,7 +82,7 @@ const LiveWebSocketChart: React.FC = () => {
       });
 
       chartRef.current = chart;
-      seriesRef.current = baselineSeries;
+      seriesRef.current = histogramSeries;
 
       console.log('Live chart initialized successfully');
 

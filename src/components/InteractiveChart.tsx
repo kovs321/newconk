@@ -455,28 +455,9 @@ const InteractiveChart: React.FC = () => {
       </div>
 
       {/* Footer */}
-      <div className="px-4 pb-4 flex justify-between items-center">
-        <div className="text-xs text-gray-500">
-          {error ? 'Sample data displayed' : 'Real-time updates via Solana Tracker API (1 second interval)'}
-        </div>
-        <div className="flex space-x-2">
-          <button
-            onClick={() => {
-              stopRealTimeUpdates();
-              startRealTimeUpdates();
-            }}
-            disabled={isUpdating}
-            className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition-colors disabled:opacity-50"
-          >
-            {isUpdating ? 'Updating...' : 'Restart Updates'}
-          </button>
-          <button
-            onClick={fetchData}
-            disabled={loading}
-            className="px-3 py-1 bg-orange-500 text-white rounded text-sm hover:bg-orange-600 transition-colors disabled:opacity-50"
-          >
-            {loading ? 'Loading...' : 'Refresh Data'}
-          </button>
+      <div className="px-4 pb-4">
+        <div className="text-xs text-gray-500 text-center">
+          {error ? 'Sample data displayed' : 'Real-time updates via Solana Tracker API'}
         </div>
       </div>
     </div>

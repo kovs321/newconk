@@ -4,6 +4,7 @@ import TokenDistributionChart from '../components/TokenDistributionChart';
 import PerformanceChart from '../components/PerformanceChart';
 import VolumeChart from '../components/VolumeChart';
 import InteractiveChart from '../components/InteractiveChart';
+import LiveWebSocketChart from '../components/LiveWebSocketChart';
 import VotingPanel from '../components/VotingPanel';
 import PitchDeck from '../components/PitchDeck';
 import HowItWorks from '../components/HowItWorks';
@@ -37,12 +38,9 @@ const Index = () => {
                   <InteractiveChart />
                 </div>
                 
-                {/* Volume Chart */}
+                {/* Live WebSocket Chart */}
                 <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Trading Volume</h3>
-                  <div className="h-64">
-                    <VolumeChart />
-                  </div>
+                  <LiveWebSocketChart />
                 </div>
               </div>
               

@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { VotingToken, isSupabaseConfigured } from '../lib/supabase';
+import { VotingToken } from '../lib/supabase';
 import { 
   fetchVotingTokens, 
   submitVote, 
   getUserVotedTokens, 
-  subscribeToVotingUpdates,
-  testDatabaseConnection 
+  subscribeToVotingUpdates
 } from '../lib/voting-service';
 
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -30,37 +29,16 @@ const VotingPanel = () => {
       try {
         setLoading(true);
         setError(null);
-        console.log('Loading voting data... Supabase configured:', isSupabaseConfigured);
-        
-        // Test database connection first
-        await testDatabaseConnection();
-        
-        // If Supabase is not configured, show sample data with real metadata
-        if (!isSupabaseConfigured) {
-          console.log('Supabase not configured, fetching token metadata for demo...');
-          const { createSampleTokensWithMetadata } = await import('../lib/voting-service');
-          const sampleTokens = await createSampleTokensWithMetadata();
-          
-          const tokensWithVoteStatus = sampleTokens.map(token => ({
-            ...token,
-            userVoted: false
-          }));
-          
-          setVotingItems(tokensWithVoteStatus);
-          setUserVotedTokens([]);
-          // setError('Demo mode: Supabase not configured. Votes will not be saved.');
-          setLoading(false);
-          return;
-        }
+        console.log('Loading voting data from localStorage...');
         
         // Fetch tokens and user votes simultaneously
         const walletAddress = publicKey?.toString()
-        console.log('Fetching from Supabase...');
+        console.log('Fetching from localStorage...');
         const [tokens, userVotes] = await Promise.all([
           fetchVotingTokens(),
           getUserVotedTokens(walletAddress)
         ]);
-        console.log('Tokens from Supabase:', tokens);
+        console.log('Tokens from localStorage:', tokens);
         
         // Mark tokens that user has voted for
         const tokensWithVoteStatus = tokens.map(token => ({
@@ -83,11 +61,6 @@ const VotingPanel = () => {
 
   // Set up real-time subscription
   useEffect(() => {
-    // Skip real-time subscription if Supabase is not configured
-    if (!isSupabaseConfigured) {
-      return;
-    }
-
     const subscription = subscribeToVotingUpdates(async (updatedTokens) => {
       try {
         // Refresh user votes to maintain accurate state
@@ -111,7 +84,7 @@ const VotingPanel = () => {
         subscription.unsubscribe();
       }
     };
-  }, []);
+  }, [publicKey]);
 
   const handleVote = async (tokenId: string) => {
     if (votingStates[tokenId]) return; // Prevent double clicking
@@ -127,21 +100,6 @@ const VotingPanel = () => {
       setError(null);
       
       const walletAddress = publicKey?.toString()
-      
-      // If Supabase is not configured, just update local state
-      if (!isSupabaseConfigured) {
-        // Update local state immediately for demo
-        setVotingItems(prev => 
-          prev.map(item => 
-            item.id === tokenId 
-              ? { ...item, votes: item.votes + 1, userVoted: true }
-              : item
-          )
-        );
-        
-        setUserVotedTokens(prev => [...prev, tokenId]);
-        return;
-      }
       
       await submitVote(tokenId, walletAddress);
       
@@ -282,7 +240,7 @@ const VotingPanel = () => {
 
       {/* Footer */}
       <div className="text-center text-xs text-gray-500">
-        Votes are stored securely and updated in real-time
+        Votes are stored locally and updated in real-time across tabs
       </div>
     </div>
   );

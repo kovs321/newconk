@@ -1,4 +1,4 @@
-import { supabase, VotingToken, UserVote, isSupabaseConfigured } from './supabase'
+import { VotingToken, UserVote } from './supabase'
 
 // Token addresses to vote for
 const VOTING_TOKEN_ADDRESSES = [
@@ -64,26 +64,42 @@ export const createSampleTokensWithMetadata = async (): Promise<VotingToken[]> =
   return tokens
 }
 
-// Test database connectivity
-export const testDatabaseConnection = async (): Promise<void> => {
-  console.log('Testing database connection...')
-  
+// LocalStorage keys
+const VOTES_STORAGE_KEY = 'bonk_strategy_votes'
+const TOKENS_STORAGE_KEY = 'bonk_strategy_tokens'
+const USER_VOTES_STORAGE_KEY = 'bonk_strategy_user_votes'
+
+// BroadcastChannel for real-time updates across tabs
+let broadcastChannel: BroadcastChannel | null = null
+
+// Initialize BroadcastChannel if supported
+if (typeof BroadcastChannel !== 'undefined') {
+  broadcastChannel = new BroadcastChannel('bonk_voting_updates')
+}
+
+// Storage helpers
+const getStorageItem = (key: string): any => {
   try {
-    // Test simple query
-    const { data, error } = await supabase
-      .from('voting_tokens')
-      .select('id')
-      .limit(1)
-    
-    console.log('Database test result:', { data, error })
-    
-    if (error) {
-      console.error('Database connection failed:', error)
-    } else {
-      console.log('Database connection successful!')
-    }
-  } catch (err) {
-    console.error('Database test error:', err)
+    const item = localStorage.getItem(key)
+    return item ? JSON.parse(item) : null
+  } catch (error) {
+    console.error('Error reading from localStorage:', error)
+    return null
+  }
+}
+
+const setStorageItem = (key: string, value: any): void => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch (error) {
+    console.error('Error writing to localStorage:', error)
+  }
+}
+
+// Broadcast update to other tabs
+const broadcastUpdate = (type: string, data: any): void => {
+  if (broadcastChannel) {
+    broadcastChannel.postMessage({ type, data })
   }
 }
 
@@ -103,18 +119,11 @@ export const getCurrentUserId = (walletAddress?: string): string => {
   return newId
 }
 
-// Initialize voting tokens in database if they don't exist
+// Initialize voting tokens in localStorage if they don't exist
 export const initializeVotingTokens = async (): Promise<void> => {
-  console.log('Checking if voting tokens exist in database...')
+  console.log('Checking if voting tokens exist in localStorage...')
   
-  const { data: existingTokens, error: fetchError } = await supabase
-    .from('voting_tokens')
-    .select('id')
-  
-  if (fetchError) {
-    console.error('Error checking existing tokens:', fetchError)
-    return
-  }
+  const existingTokens = getStorageItem(TOKENS_STORAGE_KEY)
   
   if (!existingTokens || existingTokens.length === 0) {
     console.log('No tokens found, initializing with sample data...')
@@ -129,25 +138,25 @@ export const initializeVotingTokens = async (): Promise<void> => {
           name: metadata.name,
           contract_address: address,
           votes: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
           image: metadata.image,
           description: metadata.description
         }
       })
     )
     
-    console.log('Inserting tokens:', tokensToInsert)
+    console.log('Storing tokens in localStorage:', tokensToInsert)
     
-    const { error: insertError } = await supabase
-      .from('voting_tokens')
-      .insert(tokensToInsert)
+    setStorageItem(TOKENS_STORAGE_KEY, tokensToInsert)
     
-    if (insertError) {
-      console.error('Error inserting tokens:', insertError)
-    } else {
-      console.log('Tokens initialized successfully!')
-    }
+    // Initialize empty votes storage
+    setStorageItem(VOTES_STORAGE_KEY, {})
+    setStorageItem(USER_VOTES_STORAGE_KEY, {})
+    
+    console.log('Tokens initialized successfully!')
   } else {
-    console.log('Tokens already exist in database:', existingTokens.length)
+    console.log('Tokens already exist in localStorage:', existingTokens.length)
   }
 }
 
@@ -156,75 +165,50 @@ export const fetchVotingTokens = async (): Promise<VotingToken[]> => {
   // Initialize tokens if needed
   await initializeVotingTokens()
   
-  const { data, error } = await supabase
-    .from('voting_tokens')
-    .select('*')
-    .order('votes', { ascending: false })
+  const tokens = getStorageItem(TOKENS_STORAGE_KEY)
   
-  if (error) {
-    console.error('Error fetching voting tokens:', error)
-    throw error
+  if (!tokens || tokens.length === 0) {
+    console.log('No tokens found in localStorage')
+    return []
   }
   
-  // Fetch metadata and real vote counts for each token
-  if (data && data.length > 0) {
-    const tokensWithMetadata = await Promise.all(
-      data.map(async (token) => {
-        const [metadata, realVoteCount] = await Promise.all([
-          fetchTokenMetadata(token.contract_address),
-          getTokenVoteCount(token.id)
-        ])
-        
-        return {
-          ...token,
-          name: metadata.name || token.name,
-          symbol: metadata.symbol || token.symbol,
-          image: metadata.image,
-          description: metadata.description,
-          votes: realVoteCount // Use real vote count from user_votes table
-        }
-      })
-    )
-    return tokensWithMetadata
-  }
+  // Get current vote counts and update metadata
+  const tokensWithVoteCounts = await Promise.all(
+    tokens.map(async (token: VotingToken) => {
+      const [metadata, realVoteCount] = await Promise.all([
+        fetchTokenMetadata(token.contract_address),
+        getTokenVoteCount(token.id)
+      ])
+      
+      return {
+        ...token,
+        name: metadata.name || token.name,
+        symbol: metadata.symbol || token.symbol,
+        image: metadata.image,
+        description: metadata.description,
+        votes: realVoteCount
+      }
+    })
+  )
   
-  return data || []
+  // Sort by votes descending
+  return tokensWithVoteCounts.sort((a, b) => b.votes - a.votes)
 }
 
 // Check if user has already voted for a token
 export const hasUserVoted = async (tokenId: string, walletAddress?: string): Promise<boolean> => {
   const userId = getCurrentUserId(walletAddress)
+  const userVotes = getStorageItem(USER_VOTES_STORAGE_KEY) || {}
   
-  const { data, error } = await supabase
-    .from('user_votes')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('token_id', tokenId)
-    .limit(1)
-  
-  if (error) {
-    console.error('Error checking user vote:', error)
-    return false
-  }
-  
-  return data && data.length > 0
+  return userVotes[userId] && userVotes[userId].includes(tokenId)
 }
 
 // Get all tokens user has voted for
 export const getUserVotedTokens = async (walletAddress?: string): Promise<string[]> => {
   const userId = getCurrentUserId(walletAddress)
+  const userVotes = getStorageItem(USER_VOTES_STORAGE_KEY) || {}
   
-  const { data, error } = await supabase
-    .from('user_votes')
-    .select('token_id')
-    .eq('user_id', userId)
-  
-  if (error) {
-    console.error('Error fetching user votes:', error)
-    return []
-  }
-  
-  return data?.map(vote => vote.token_id) || []
+  return userVotes[userId] || []
 }
 
 // Submit a vote
@@ -242,47 +226,32 @@ export const submitVote = async (tokenId: string, walletAddress?: string): Promi
       throw new Error('User has already voted for this token')
     }
     
-    // Insert vote
-    console.log('Inserting vote into user_votes table...')
-    const { data: voteData, error: voteError } = await supabase
-      .from('user_votes')
-      .insert([
-        {
-          user_id: userId,
-          token_id: tokenId
-        }
-      ])
-      .select()
+    // Get current user votes
+    const userVotes = getStorageItem(USER_VOTES_STORAGE_KEY) || {}
     
-    console.log('Vote insert result:', { voteData, voteError })
-    
-    if (voteError) {
-      console.error('Error submitting vote:', voteError)
-      throw voteError
+    // Add this vote to user's votes
+    if (!userVotes[userId]) {
+      userVotes[userId] = []
     }
+    userVotes[userId].push(tokenId)
     
-    // Update vote count in voting_tokens table by counting actual votes
-    console.log('Getting new vote count...')
-    const newVoteCount = await getTokenVoteCount(tokenId)
-    console.log('New vote count:', newVoteCount)
+    // Save updated user votes
+    setStorageItem(USER_VOTES_STORAGE_KEY, userVotes)
     
-    const { data: updateData, error: updateError } = await supabase
-      .from('voting_tokens')
-      .update({ 
-        votes: newVoteCount,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', tokenId)
-      .select()
+    // Get all votes for counting
+    const allVotes = getStorageItem(VOTES_STORAGE_KEY) || {}
     
-    console.log('Vote count update result:', { updateData, updateError })
+    // Increment vote count for this token
+    allVotes[tokenId] = (allVotes[tokenId] || 0) + 1
     
-    if (updateError) {
-      console.error('Error updating vote count:', updateError)
-      throw updateError
-    }
+    // Save updated vote counts
+    setStorageItem(VOTES_STORAGE_KEY, allVotes)
     
-    console.log('Vote submitted successfully!')
+    console.log('Vote submitted successfully to localStorage!')
+    
+    // Broadcast update to other tabs
+    broadcastUpdate('vote_submitted', { tokenId, userId, newVoteCount: allVotes[tokenId] })
+    
     return true
   } catch (error) {
     console.error('Error in submitVote:', error)
@@ -294,64 +263,40 @@ export const submitVote = async (tokenId: string, walletAddress?: string): Promi
 export const subscribeToVotingUpdates = (
   callback: (tokens: VotingToken[]) => void
 ) => {
-  console.log('Setting up real-time subscription...')
+  console.log('Setting up real-time subscription with BroadcastChannel...')
   
-  const subscription = supabase
-    .channel('voting_changes')
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'voting_tokens'
-      },
-      async (payload) => {
-        console.log('Real-time update received for voting_tokens:', payload)
-        // Refresh tokens when voting_tokens table changes
-        try {
-          const tokens = await fetchVotingTokens()
-          callback(tokens)
-        } catch (error) {
-          console.error('Error fetching updated tokens:', error)
-        }
-      }
-    )
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'user_votes'
-      },
-      async (payload) => {
-        console.log('Real-time update received for user_votes:', payload)
-        // Refresh tokens when new votes are cast
-        try {
-          const tokens = await fetchVotingTokens()
-          callback(tokens)
-        } catch (error) {
-          console.error('Error fetching updated tokens:', error)
-        }
-      }
-    )
-    .subscribe((status) => {
-      console.log('Subscription status:', status)
-    })
-  
-  return subscription
-}
-
-// Get vote count for a specific token by counting user votes
-export const getTokenVoteCount = async (tokenId: string): Promise<number> => {
-  const { data, error } = await supabase
-    .from('user_votes')
-    .select('id', { count: 'exact' })
-    .eq('token_id', tokenId)
-  
-  if (error) {
-    console.error('Error fetching vote count:', error)
-    return 0
+  if (!broadcastChannel) {
+    console.warn('BroadcastChannel not supported, real-time updates disabled')
+    return { unsubscribe: () => {} }
   }
   
-  return data?.length || 0
+  const handleMessage = async (event: MessageEvent) => {
+    console.log('Real-time update received:', event.data)
+    
+    if (event.data.type === 'vote_submitted') {
+      // Refresh tokens when votes are cast
+      try {
+        const tokens = await fetchVotingTokens()
+        callback(tokens)
+      } catch (error) {
+        console.error('Error fetching updated tokens:', error)
+      }
+    }
+  }
+  
+  broadcastChannel.addEventListener('message', handleMessage)
+  
+  return {
+    unsubscribe: () => {
+      if (broadcastChannel) {
+        broadcastChannel.removeEventListener('message', handleMessage)
+      }
+    }
+  }
+}
+
+// Get vote count for a specific token
+export const getTokenVoteCount = async (tokenId: string): Promise<number> => {
+  const allVotes = getStorageItem(VOTES_STORAGE_KEY) || {}
+  return allVotes[tokenId] || 0
 }

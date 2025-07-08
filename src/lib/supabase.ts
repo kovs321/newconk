@@ -11,13 +11,35 @@ console.log('Supabase environment check:', {
 // Create a mock supabase client for development
 const createMockSupabase = () => ({
   from: () => ({
-    select: () => ({ data: [], error: new Error('Supabase not configured') }),
-    insert: () => ({ error: new Error('Supabase not configured') }),
+    select: () => ({
+      limit: () => ({ data: [], error: new Error('Supabase not configured') }),
+      order: () => ({ data: [], error: new Error('Supabase not configured') }),
+      eq: () => ({ data: [], error: new Error('Supabase not configured') }),
+      single: () => ({ data: null, error: new Error('Supabase not configured') }),
+      data: [], 
+      error: new Error('Supabase not configured')
+    }),
+    insert: () => ({ 
+      select: () => ({ data: [], error: new Error('Supabase not configured') }),
+      error: new Error('Supabase not configured') 
+    }),
+    update: () => ({ 
+      eq: () => ({ 
+        select: () => ({ data: [], error: new Error('Supabase not configured') }),
+        data: [], 
+        error: new Error('Supabase not configured') 
+      }),
+      error: new Error('Supabase not configured') 
+    }),
     delete: () => ({ error: new Error('Supabase not configured') }),
   }),
   channel: () => ({
-    on: () => ({ subscribe: () => ({ unsubscribe: () => {} }) }),
+    on: () => ({ 
+      on: () => ({ subscribe: () => ({ unsubscribe: () => {} }) }),
+      subscribe: () => ({ unsubscribe: () => {} }) 
+    }),
   }),
+  rpc: () => ({ error: new Error('Supabase not configured') }),
 })
 
 export const supabase = (!supabaseUrl || !supabaseAnonKey) 

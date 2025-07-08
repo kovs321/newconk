@@ -12,13 +12,9 @@ import { Header } from '../components/Header';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 
 const Index = () => {
-  console.log('Index component rendering');
-  
   return (
     <div className="min-h-screen bg-white">
-      <ErrorBoundary componentName="Header">
-        <Header />
-      </ErrorBoundary>
+      <Header />
 
       {/* Main Content */}
       <main className="pt-16">
@@ -40,16 +36,12 @@ const Index = () => {
               <div className="lg:col-span-2 space-y-6">
                 {/* Trading Chart */}
                 <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
-                  <ErrorBoundary componentName="InteractiveChart">
-                    <InteractiveChart />
-                  </ErrorBoundary>
+                  <InteractiveChart />
                 </div>
                 
                 {/* Live WebSocket Chart */}
                 <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
-                  <ErrorBoundary componentName="LiveWebSocketChart">
-                    <LiveWebSocketChart />
-                  </ErrorBoundary>
+                  <LiveWebSocketChart />
                 </div>
               </div>
               
@@ -58,9 +50,7 @@ const Index = () => {
                 <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
                   <h3 className="text-lg font-black text-gray-900 mb-4">Token Distribution</h3>
                   <div className="h-80">
-                    <ErrorBoundary componentName="TokenDistributionChart">
-                      <TokenDistributionChart />
-                    </ErrorBoundary>
+                    <TokenDistributionChart />
                   </div>
                 </div>
               </div>
@@ -83,9 +73,7 @@ const Index = () => {
           <div className="container mx-auto max-w-6xl">
             <div className="bg-gray-50 rounded-lg p-8 shadow-sm">
               <h3 className="text-2xl font-black text-gray-900 mb-6 text-center">Pitch Deck</h3>
-              <ErrorBoundary componentName="PitchDeck">
-                <PitchDeck />
-              </ErrorBoundary>
+              <PitchDeck />
             </div>
           </div>
         </section>
@@ -94,9 +82,7 @@ const Index = () => {
         <section id="how" className="py-12 px-4 bg-gray-50">
           <div className="container mx-auto max-w-6xl">
             <h3 className="text-2xl font-black text-gray-900 text-center mb-8">How It Works</h3>
-            <ErrorBoundary componentName="HowItWorks">
-              <HowItWorks />
-            </ErrorBoundary>
+            <HowItWorks />
           </div>
         </section>
       </main>

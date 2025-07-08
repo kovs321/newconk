@@ -52,7 +52,7 @@ export const createSampleTokensWithMetadata = async (): Promise<VotingToken[]> =
         symbol: metadata.symbol,
         name: metadata.name,
         contract_address: address,
-        votes: Math.floor(Math.random() * 2000) + 500, // Random votes between 500-2500
+        votes: 0, // Start with 0 votes
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         image: metadata.image,
@@ -64,9 +64,13 @@ export const createSampleTokensWithMetadata = async (): Promise<VotingToken[]> =
   return tokens
 }
 
-// Generate a unique user ID (could be wallet address or session-based)
-export const generateUserId = (): string => {
-  // Check if user already has an ID in localStorage
+// Get current user ID from wallet (if connected)
+export const getCurrentUserId = (walletAddress?: string): string => {
+  if (walletAddress) {
+    return walletAddress
+  }
+  
+  // Fallback to localStorage for demo mode
   const existingId = localStorage.getItem('voting_user_id')
   if (existingId) return existingId
   
@@ -74,11 +78,6 @@ export const generateUserId = (): string => {
   const newId = crypto.randomUUID()
   localStorage.setItem('voting_user_id', newId)
   return newId
-}
-
-// Get current user ID
-export const getCurrentUserId = (): string => {
-  return generateUserId()
 }
 
 // Fetch all voting tokens
@@ -97,8 +96,8 @@ export const fetchVotingTokens = async (): Promise<VotingToken[]> => {
 }
 
 // Check if user has already voted for a token
-export const hasUserVoted = async (tokenId: string): Promise<boolean> => {
-  const userId = getCurrentUserId()
+export const hasUserVoted = async (tokenId: string, walletAddress?: string): Promise<boolean> => {
+  const userId = getCurrentUserId(walletAddress)
   
   const { data, error } = await supabase
     .from('user_votes')
@@ -116,8 +115,8 @@ export const hasUserVoted = async (tokenId: string): Promise<boolean> => {
 }
 
 // Get all tokens user has voted for
-export const getUserVotedTokens = async (): Promise<string[]> => {
-  const userId = getCurrentUserId()
+export const getUserVotedTokens = async (walletAddress?: string): Promise<string[]> => {
+  const userId = getCurrentUserId(walletAddress)
   
   const { data, error } = await supabase
     .from('user_votes')
@@ -133,12 +132,12 @@ export const getUserVotedTokens = async (): Promise<string[]> => {
 }
 
 // Submit a vote
-export const submitVote = async (tokenId: string): Promise<boolean> => {
-  const userId = getCurrentUserId()
+export const submitVote = async (tokenId: string, walletAddress?: string): Promise<boolean> => {
+  const userId = getCurrentUserId(walletAddress)
   
   try {
     // Check if user already voted
-    const alreadyVoted = await hasUserVoted(tokenId)
+    const alreadyVoted = await hasUserVoted(tokenId, walletAddress)
     if (alreadyVoted) {
       throw new Error('User has already voted for this token')
     }

@@ -1,5 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -35,9 +37,9 @@ export const Header = () => {
           </nav>
 
           {/* Connect Wallet Button */}
-          <button className="hidden md:block bg-gray-900 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors">
-            Connect Wallet
-          </button>
+          <div className="hidden md:block">
+            <WalletMultiButton className="!bg-gray-900 !text-white !px-4 !py-2 !rounded-full !text-sm !font-medium hover:!bg-gray-800 !transition-colors !border-none" />
+          </div>
 
           {/* Mobile Menu Button */}
           <button
@@ -63,9 +65,9 @@ export const Header = () => {
               <a href="#voting" className="block px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors">Voting</a>
               <a href="#pitch" className="block px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors">Pitch Deck</a>
               <a href="#how" className="block px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors">How it Works</a>
-              <button className="w-full text-left bg-gray-900 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-800 transition-colors">
-                Connect Wallet
-              </button>
+              <div className="px-3 py-2">
+                <WalletMultiButton className="!bg-gray-900 !text-white !px-3 !py-2 !rounded-md !text-sm !font-medium hover:!bg-gray-800 !transition-colors !border-none !w-full" />
+              </div>
             </div>
           </div>
         )}

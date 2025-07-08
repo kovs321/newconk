@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useWallet } from '@solana/wallet-adapter-react';
 import { VotingToken, isSupabaseConfigured } from '../lib/supabase';
 import { 
   fetchVotingTokens, 
@@ -12,11 +13,14 @@ interface VotingItem extends VotingToken {
 }
 
 const VotingPanel = () => {
+  const { connected, publicKey } = useWallet();
   const [votingItems, setVotingItems] = useState<VotingItem[]>([]);
   const [userVotedTokens, setUserVotedTokens] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [votingStates, setVotingStates] = useState<{ [key: string]: boolean }>({});
+  
+  const VOTE_GOAL = 25;
 
   // Load initial data
   useEffect(() => {
@@ -44,9 +48,10 @@ const VotingPanel = () => {
         }
         
         // Fetch tokens and user votes simultaneously
+        const walletAddress = publicKey?.toString()
         const [tokens, userVotes] = await Promise.all([
           fetchVotingTokens(),
-          getUserVotedTokens()
+          getUserVotedTokens(walletAddress)
         ]);
         
         // Mark tokens that user has voted for
@@ -66,7 +71,7 @@ const VotingPanel = () => {
     };
 
     loadVotingData();
-  }, []);
+  }, [connected, publicKey]);
 
   // Set up real-time subscription
   useEffect(() => {
@@ -78,7 +83,8 @@ const VotingPanel = () => {
     const subscription = subscribeToVotingUpdates(async (updatedTokens) => {
       try {
         // Refresh user votes to maintain accurate state
-        const userVotes = await getUserVotedTokens();
+        const walletAddress = publicKey?.toString()
+        const userVotes = await getUserVotedTokens(walletAddress);
         
         const tokensWithVoteStatus = updatedTokens.map(token => ({
           ...token,
@@ -102,9 +108,17 @@ const VotingPanel = () => {
   const handleVote = async (tokenId: string) => {
     if (votingStates[tokenId]) return; // Prevent double clicking
     
+    // Check if wallet is connected
+    if (!connected) {
+      setError('Please connect your Phantom wallet to vote.');
+      return;
+    }
+    
     try {
       setVotingStates(prev => ({ ...prev, [tokenId]: true }));
       setError(null);
+      
+      const walletAddress = publicKey?.toString()
       
       // If Supabase is not configured, just update local state
       if (!isSupabaseConfigured) {
@@ -118,11 +132,10 @@ const VotingPanel = () => {
         );
         
         setUserVotedTokens(prev => [...prev, tokenId]);
-        // setError('Demo mode: Vote counted locally only. Configure Supabase to save votes.');
         return;
       }
       
-      await submitVote(tokenId);
+      await submitVote(tokenId, walletAddress);
       
       // Update local state immediately for better UX
       setVotingItems(prev => 
@@ -179,8 +192,9 @@ const VotingPanel = () => {
 
       {/* Voting Items */}
       {votingItems.map((item) => {
-        const percentage = totalVotes > 0 ? (item.votes / totalVotes) * 100 : 0;
+        const percentage = (item.votes / VOTE_GOAL) * 100;
         const isVoting = votingStates[item.id];
+        const isGoalReached = item.votes >= VOTE_GOAL;
         
         return (
           <div key={item.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
@@ -212,36 +226,45 @@ const VotingPanel = () => {
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-lg font-semibold text-gray-900">{item.votes}</p>
+                <p className="text-lg font-semibold text-gray-900">{item.votes}/{VOTE_GOAL}</p>
                 <p className="text-sm text-gray-500">votes</p>
+                {isGoalReached && (
+                  <span className="text-xs text-green-600 font-medium">✓ Goal Reached!</span>
+                )}
               </div>
             </div>
             
             <div className="mb-4">
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-700">Progress</span>
-                <span className="text-sm font-medium text-gray-700">{percentage.toFixed(1)}%</span>
+                <span className="text-sm font-medium text-gray-700">Progress to Goal</span>
+                <span className="text-sm font-medium text-gray-700">{Math.min(percentage, 100).toFixed(1)}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
-                  className="bg-orange-500 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${percentage}%` }}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    isGoalReached ? 'bg-green-500' : 'bg-orange-500'
+                  }`}
+                  style={{ width: `${Math.min(percentage, 100)}%` }}
                 ></div>
               </div>
             </div>
             
             <button
               onClick={() => handleVote(item.id)}
-              disabled={item.userVoted || isVoting}
+              disabled={item.userVoted || isVoting || !connected}
               className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
                 item.userVoted
                   ? 'bg-green-100 text-green-700 cursor-not-allowed'
                   : isVoting
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : !connected
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                   : 'bg-orange-500 text-white hover:bg-orange-600'
               }`}
             >
-              {item.userVoted ? '✓ Voted' : isVoting ? 'Voting...' : 'Vote'}
+              {item.userVoted ? '✓ Voted' : 
+               isVoting ? 'Voting...' : 
+               !connected ? 'Connect Wallet to Vote' : 'Vote'}
             </button>
           </div>
         );

@@ -89,21 +89,24 @@ const VotingPanel = () => {
   const handleVote = async (tokenId: string) => {
     if (votingStates[tokenId]) return; // Prevent double clicking
     
-    // Check if wallet is connected
-    if (!connected) {
+    // 1. Check if Phantom wallet is connected
+    if (!connected || !publicKey) {
       setError('Please connect your Phantom wallet to vote.');
       return;
     }
+    
+    const walletAddress = publicKey.toString();
     
     try {
       setVotingStates(prev => ({ ...prev, [tokenId]: true }));
       setError(null);
       
-      const walletAddress = publicKey?.toString()
+      console.log('🗳️ Voting attempt:', { tokenId, walletAddress: walletAddress.substring(0, 8) + '...' });
       
+      // 2. Submit vote with wallet address
       await submitVote(tokenId, walletAddress);
       
-      // Update local state immediately for better UX
+      // 3. Update local state immediately for better UX
       setVotingItems(prev => 
         prev.map(item => 
           item.id === tokenId 
@@ -114,9 +117,19 @@ const VotingPanel = () => {
       
       setUserVotedTokens(prev => [...prev, tokenId]);
       
+      console.log('✅ Vote successful for token:', tokenId);
+      
     } catch (err: any) {
-      console.error('Error voting:', err);
-      setError(err.message || 'Failed to submit vote. Please try again.');
+      console.error('❌ Error voting:', err);
+      
+      // Show specific error messages
+      if (err.message.includes('already voted')) {
+        setError('You have already voted on this token with your current wallet.');
+      } else if (err.message.includes('wallet must be connected')) {
+        setError('Please connect your Phantom wallet to vote.');
+      } else {
+        setError(err.message || 'Failed to submit vote. Please try again.');
+      }
     } finally {
       setVotingStates(prev => ({ ...prev, [tokenId]: false }));
     }
@@ -240,7 +253,7 @@ const VotingPanel = () => {
 
       {/* Footer */}
       <div className="text-center text-xs text-gray-500">
-        Votes are stored locally and updated in real-time across tabs
+        One vote per wallet address per token • Votes stored locally
       </div>
     </div>
   );

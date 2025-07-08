@@ -221,63 +221,85 @@ export const fetchVotingTokens = async (): Promise<VotingToken[]> => {
   return tokensWithVoteCounts.sort((a, b) => b.votes - a.votes)
 }
 
-// Check if user has already voted for a token
+// Check if wallet has already voted for a token
+export const hasWalletVoted = async (tokenId: string, walletAddress: string): Promise<boolean> => {
+  const userVotes = getStorageItem(USER_VOTES_STORAGE_KEY) || {}
+  
+  // Check if this specific wallet address has voted for this token
+  return userVotes[walletAddress] && userVotes[walletAddress].includes(tokenId)
+}
+
+// Legacy function for backward compatibility
 export const hasUserVoted = async (tokenId: string, walletAddress?: string): Promise<boolean> => {
-  const userId = getCurrentUserId(walletAddress)
-  const userVotes = getStorageItem(USER_VOTES_STORAGE_KEY) || {}
-  
-  return userVotes[userId] && userVotes[userId].includes(tokenId)
+  if (!walletAddress) {
+    return false // If no wallet connected, they haven't voted
+  }
+  return hasWalletVoted(tokenId, walletAddress)
 }
 
-// Get all tokens user has voted for
+// Get all tokens a wallet has voted for
+export const getWalletVotedTokens = async (walletAddress: string): Promise<string[]> => {
+  const userVotes = getStorageItem(USER_VOTES_STORAGE_KEY) || {}
+  
+  // Return tokens this specific wallet has voted for
+  return userVotes[walletAddress] || []
+}
+
+// Legacy function for backward compatibility
 export const getUserVotedTokens = async (walletAddress?: string): Promise<string[]> => {
-  const userId = getCurrentUserId(walletAddress)
-  const userVotes = getStorageItem(USER_VOTES_STORAGE_KEY) || {}
-  
-  return userVotes[userId] || []
+  if (!walletAddress) {
+    return [] // If no wallet connected, they haven't voted for anything
+  }
+  return getWalletVotedTokens(walletAddress)
 }
 
-// Submit a vote
+// Submit a vote (requires wallet connection)
 export const submitVote = async (tokenId: string, walletAddress?: string): Promise<boolean> => {
-  const userId = getCurrentUserId(walletAddress)
-  
   try {
-    console.log('Attempting to submit vote:', { tokenId, userId: userId.substring(0, 10) + '...' })
+    // 1. Check if wallet is connected
+    if (!walletAddress) {
+      throw new Error('Phantom wallet must be connected to vote')
+    }
     
-    // Check if user already voted
-    const alreadyVoted = await hasUserVoted(tokenId, walletAddress)
-    console.log('User already voted check:', alreadyVoted)
+    console.log('Attempting to submit vote:', { 
+      tokenId, 
+      walletAddress: walletAddress.substring(0, 8) + '...' 
+    })
+    
+    // 2. Check if this wallet has already voted on this token
+    const alreadyVoted = await hasWalletVoted(tokenId, walletAddress)
+    console.log('Wallet already voted check:', alreadyVoted)
     
     if (alreadyVoted) {
-      throw new Error('User has already voted for this token')
+      throw new Error('You have already voted on this token')
     }
     
-    // Get current user votes
+    // 3. Get current wallet votes from storage
     const userVotes = getStorageItem(USER_VOTES_STORAGE_KEY) || {}
     
-    // Add this vote to user's votes
-    if (!userVotes[userId]) {
-      userVotes[userId] = []
+    // 4. Add this vote to wallet's voting record
+    if (!userVotes[walletAddress]) {
+      userVotes[walletAddress] = []
     }
-    userVotes[userId].push(tokenId)
+    userVotes[walletAddress].push(tokenId)
     
-    // Save updated user votes
+    // 5. Save updated wallet voting records
     setStorageItem(USER_VOTES_STORAGE_KEY, userVotes)
     
-    // Get all votes for counting
+    // 6. Get all votes for counting
     const allVotes = getStorageItem(VOTES_STORAGE_KEY) || {}
     
-    // Increment vote count for this token
+    // 7. Increment vote count for this token
     allVotes[tokenId] = (allVotes[tokenId] || 0) + 1
     
-    // Save updated vote counts
+    // 8. Save updated vote counts
     setStorageItem(VOTES_STORAGE_KEY, allVotes)
     
-    console.log('Vote submitted successfully!')
+    console.log('✅ Vote submitted successfully! Wallet:', walletAddress.substring(0, 8) + '...')
     
     return true
   } catch (error) {
-    console.error('Error in submitVote:', error)
+    console.error('❌ Error in submitVote:', error)
     throw error
   }
 }
@@ -321,6 +343,7 @@ export const testVote = async (tokenId: string = '1') => {
 if (typeof window !== 'undefined') {
   (window as any).testVote = testVote
   (window as any).getVotes = () => getStorageItem(VOTES_STORAGE_KEY)
+  (window as any).getWalletVotes = () => getStorageItem(USER_VOTES_STORAGE_KEY)
   (window as any).clearVotes = () => {
     try {
       localStorage.removeItem(VOTES_STORAGE_KEY)
@@ -332,5 +355,35 @@ if (typeof window !== 'undefined') {
       inMemoryVotes = {}
       inMemoryUserVotes = {}
     }
+  }
+  
+  // Helper function to show voting logic
+  (window as any).showVotingLogic = () => {
+    console.log(`
+🗳️ BONK STRATEGY Voting Logic:
+
+1. Connect Phantom Wallet:
+   - User clicks "Connect Wallet" button
+   - Phantom wallet connection established
+   - Get wallet's public address
+
+2. Voting Restriction Logic:
+   - For each token, track which wallet addresses have voted
+   - When user votes:
+     ✅ Check if current wallet has already voted on this token
+     ✅ If not voted: Allow vote + record wallet address
+     ❌ If already voted: Block vote + show "You have already voted"
+
+3. Storage (Front-End):
+   - Store wallet voting records in localStorage
+   - Format: { "walletAddress": ["token1", "token2"], ... }
+   - Note: Only prevents double voting in same browser
+
+4. Test Commands:
+   - testVote('1') - Test vote for token 1
+   - getVotes() - See vote counts
+   - getWalletVotes() - See which wallets voted for what
+   - clearVotes() - Clear all votes
+    `)
   }
 }

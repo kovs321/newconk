@@ -75,8 +75,11 @@ const VotingPanel = () => {
 
   // Set up real-time subscription
   useEffect(() => {
+    console.log('🔄 Setting up real-time subscription...');
     const channel = subscribeToVotingUpdates(async (updatedTokens) => {
       try {
+        console.log('📨 Real-time update received! Updated tokens:', updatedTokens);
+        
         // Refresh user votes to maintain accurate state
         let userVotes: string[] = [];
         if (connected && publicKey) {
@@ -92,6 +95,7 @@ const VotingPanel = () => {
           userVoted: userVotes.includes(token.id)
         }));
         
+        console.log('🔄 Updating UI with new vote counts...');
         setVotingItems(tokensWithVoteStatus);
         setUserVotedTokens(userVotes);
       } catch (err) {
@@ -100,6 +104,7 @@ const VotingPanel = () => {
     });
 
     return () => {
+      console.log('🔌 Unsubscribing from real-time updates');
       channel.unsubscribe();
     };
   }, [connected, publicKey]);
@@ -185,8 +190,32 @@ const VotingPanel = () => {
           <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
           <span className="text-sm font-medium text-gray-600">Live Voting</span>
         </div>
-        <div className="text-sm text-gray-500">
-          {totalVotes} total votes
+        <div className="flex items-center space-x-4">
+          <div className="text-sm text-gray-500">
+            {totalVotes} total votes
+          </div>
+          <button
+            onClick={async () => {
+              console.log('🔄 Manual refresh triggered');
+              const tokens = await fetchVotableTokens();
+              let userVotes: string[] = [];
+              if (connected && publicKey) {
+                const walletAddress = publicKey.toString();
+                const user = await getUserByWallet(walletAddress);
+                if (user) {
+                  userVotes = await getUserVotedTokens(user.id);
+                }
+              }
+              const tokensWithVoteStatus = tokens.map(token => ({
+                ...token,
+                userVoted: userVotes.includes(token.id)
+              }));
+              setVotingItems(tokensWithVoteStatus);
+            }}
+            className="text-xs text-blue-600 hover:text-blue-800 underline"
+          >
+            Refresh
+          </button>
         </div>
       </div>
 

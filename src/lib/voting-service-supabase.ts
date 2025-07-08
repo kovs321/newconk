@@ -77,9 +77,9 @@ export const hasUserVotedForToken = async (userId: string, tokenId: string): Pro
       .select('id')
       .eq('user_id', userId)
       .eq('token_id', tokenId)
-      .single()
+      .maybeSingle() // Use maybeSingle() instead of single() to avoid 406 errors
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+    if (error) {
       console.error('Error checking vote:', error)
       return false
     }

@@ -3,11 +3,23 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables')
-}
+// Create a mock supabase client for development
+const createMockSupabase = () => ({
+  from: () => ({
+    select: () => ({ data: [], error: new Error('Supabase not configured') }),
+    insert: () => ({ error: new Error('Supabase not configured') }),
+    delete: () => ({ error: new Error('Supabase not configured') }),
+  }),
+  channel: () => ({
+    on: () => ({ subscribe: () => ({ unsubscribe: () => {} }) }),
+  }),
+})
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = (!supabaseUrl || !supabaseAnonKey) 
+  ? createMockSupabase() as any
+  : createClient(supabaseUrl, supabaseAnonKey)
+
+export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey)
 
 // Database types
 export interface VotingToken {

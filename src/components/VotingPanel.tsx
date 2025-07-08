@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { VotingToken } from '../lib/supabase';
+import { VotingToken, isSupabaseConfigured } from '../lib/supabase';
 import { 
   fetchVotingTokens, 
   submitVote, 
@@ -24,6 +24,28 @@ const VotingPanel = () => {
       try {
         setLoading(true);
         setError(null);
+        
+        // If Supabase is not configured, show sample data
+        if (!isSupabaseConfigured) {
+          console.log('Supabase not configured, showing sample data');
+          const sampleTokens = [
+            { id: '1', symbol: 'BONK', name: 'Bonk Token', contract_address: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', votes: 1250, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+            { id: '2', symbol: 'SAMO', name: 'Samoyedcoin', contract_address: 'X6y9bV1V5pMKGfXVwWy1xq1m9xGxJrAFrQQWbGfkSuq', votes: 1800, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+            { id: '3', symbol: 'WIF', name: 'Dogwifhat', contract_address: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm', votes: 980, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+            { id: '4', symbol: 'POPCAT', name: 'Popcat Token', contract_address: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKZNqJ8YoWKpQqZs', votes: 970, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+          ];
+          
+          const tokensWithVoteStatus = sampleTokens.map(token => ({
+            ...token,
+            userVoted: false
+          }));
+          
+          setVotingItems(tokensWithVoteStatus);
+          setUserVotedTokens([]);
+          setError('Demo mode: Supabase not configured. Votes will not be saved.');
+          setLoading(false);
+          return;
+        }
         
         // Fetch tokens and user votes simultaneously
         const [tokens, userVotes] = await Promise.all([
@@ -52,6 +74,11 @@ const VotingPanel = () => {
 
   // Set up real-time subscription
   useEffect(() => {
+    // Skip real-time subscription if Supabase is not configured
+    if (!isSupabaseConfigured) {
+      return;
+    }
+
     const subscription = subscribeToVotingUpdates(async (updatedTokens) => {
       try {
         // Refresh user votes to maintain accurate state
@@ -82,6 +109,22 @@ const VotingPanel = () => {
     try {
       setVotingStates(prev => ({ ...prev, [tokenId]: true }));
       setError(null);
+      
+      // If Supabase is not configured, just update local state
+      if (!isSupabaseConfigured) {
+        // Update local state immediately for demo
+        setVotingItems(prev => 
+          prev.map(item => 
+            item.id === tokenId 
+              ? { ...item, votes: item.votes + 1, userVoted: true }
+              : item
+          )
+        );
+        
+        setUserVotedTokens(prev => [...prev, tokenId]);
+        setError('Demo mode: Vote counted locally only. Configure Supabase to save votes.');
+        return;
+      }
       
       await submitVote(tokenId);
       

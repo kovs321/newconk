@@ -50,9 +50,9 @@ const Index = () => {
               
               {/* Right Column - Token Distribution */}
               <div className="lg:col-span-1">
-                <div className="bg-gray-50 rounded-lg p-6 shadow-sm h-full">
+                <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Token Distribution</h3>
-                  <div className="h-96 lg:h-full min-h-[400px]">
+                  <div className="h-80">
                     <TokenDistributionChart />
                   </div>
                 </div>

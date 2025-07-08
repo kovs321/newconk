@@ -1,36 +1,147 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { VotingToken } from '../lib/supabase';
+import { 
+  fetchVotingTokens, 
+  submitVote, 
+  getUserVotedTokens, 
+  subscribeToVotingUpdates 
+} from '../lib/voting-service';
 
-interface VotingItem {
-  id: string;
-  symbol: string;
-  name: string;
-  votes: number;
-  totalVotes: number;
+interface VotingItem extends VotingToken {
   userVoted?: boolean;
 }
 
 const VotingPanel = () => {
-  const [votingItems, setVotingItems] = useState<VotingItem[]>([
-    { id: '1', symbol: 'ORCA', name: 'Orca Protocol', votes: 1250, totalVotes: 5000 },
-    { id: '2', symbol: 'RAY', name: 'Raydium', votes: 1800, totalVotes: 5000 },
-    { id: '3', symbol: 'SERUM', name: 'Serum', votes: 980, totalVotes: 5000 },
-    { id: '4', symbol: 'MNGO', name: 'Mango Markets', votes: 970, totalVotes: 5000 },
-  ]);
+  const [votingItems, setVotingItems] = useState<VotingItem[]>([]);
+  const [userVotedTokens, setUserVotedTokens] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [votingStates, setVotingStates] = useState<{ [key: string]: boolean }>({});
 
-  const handleVote = (itemId: string) => {
-    setVotingItems(prev => 
-      prev.map(item => 
-        item.id === itemId 
-          ? { ...item, votes: item.votes + 1, userVoted: true }
-          : item
-      )
-    );
+  // Load initial data
+  useEffect(() => {
+    const loadVotingData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Fetch tokens and user votes simultaneously
+        const [tokens, userVotes] = await Promise.all([
+          fetchVotingTokens(),
+          getUserVotedTokens()
+        ]);
+        
+        // Mark tokens that user has voted for
+        const tokensWithVoteStatus = tokens.map(token => ({
+          ...token,
+          userVoted: userVotes.includes(token.id)
+        }));
+        
+        setVotingItems(tokensWithVoteStatus);
+        setUserVotedTokens(userVotes);
+      } catch (err) {
+        console.error('Error loading voting data:', err);
+        setError('Failed to load voting data. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadVotingData();
+  }, []);
+
+  // Set up real-time subscription
+  useEffect(() => {
+    const subscription = subscribeToVotingUpdates(async (updatedTokens) => {
+      try {
+        // Refresh user votes to maintain accurate state
+        const userVotes = await getUserVotedTokens();
+        
+        const tokensWithVoteStatus = updatedTokens.map(token => ({
+          ...token,
+          userVoted: userVotes.includes(token.id)
+        }));
+        
+        setVotingItems(tokensWithVoteStatus);
+        setUserVotedTokens(userVotes);
+      } catch (err) {
+        console.error('Error updating tokens:', err);
+      }
+    });
+
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe();
+      }
+    };
+  }, []);
+
+  const handleVote = async (tokenId: string) => {
+    if (votingStates[tokenId]) return; // Prevent double clicking
+    
+    try {
+      setVotingStates(prev => ({ ...prev, [tokenId]: true }));
+      setError(null);
+      
+      await submitVote(tokenId);
+      
+      // Update local state immediately for better UX
+      setVotingItems(prev => 
+        prev.map(item => 
+          item.id === tokenId 
+            ? { ...item, votes: item.votes + 1, userVoted: true }
+            : item
+        )
+      );
+      
+      setUserVotedTokens(prev => [...prev, tokenId]);
+      
+    } catch (err: any) {
+      console.error('Error voting:', err);
+      setError(err.message || 'Failed to submit vote. Please try again.');
+    } finally {
+      setVotingStates(prev => ({ ...prev, [tokenId]: false }));
+    }
   };
+
+  // Calculate total votes for percentage calculation
+  const totalVotes = votingItems.reduce((sum, item) => sum + item.votes, 0);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="flex items-center space-x-3">
+          <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-gray-600">Loading voting data...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800 text-sm">{error}</p>
+        </div>
+      )}
+
+      {/* Live Indicator */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
+          <span className="text-sm font-medium text-gray-600">Live Voting</span>
+        </div>
+        <div className="text-sm text-gray-500">
+          {totalVotes} total votes
+        </div>
+      </div>
+
+      {/* Voting Items */}
       {votingItems.map((item) => {
-        const percentage = (item.votes / item.totalVotes) * 100;
+        const percentage = totalVotes > 0 ? (item.votes / totalVotes) * 100 : 0;
+        const isVoting = votingStates[item.id];
         
         return (
           <div key={item.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
@@ -65,18 +176,25 @@ const VotingPanel = () => {
             
             <button
               onClick={() => handleVote(item.id)}
-              disabled={item.userVoted}
+              disabled={item.userVoted || isVoting}
               className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
                 item.userVoted
+                  ? 'bg-green-100 text-green-700 cursor-not-allowed'
+                  : isVoting
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                   : 'bg-orange-500 text-white hover:bg-orange-600'
               }`}
             >
-              {item.userVoted ? 'Voted' : 'Vote'}
+              {item.userVoted ? '✓ Voted' : isVoting ? 'Voting...' : 'Vote'}
             </button>
           </div>
         );
       })}
+
+      {/* Footer */}
+      <div className="text-center text-xs text-gray-500">
+        Votes are stored securely and updated in real-time
+      </div>
     </div>
   );
 };

@@ -1,21 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
 
-// Safe wallet imports with error handling
-let useWallet: any;
-let WalletMultiButton: any;
-
-try {
-  const walletAdapter = require('@solana/wallet-adapter-react');
-  const walletAdapterUi = require('@solana/wallet-adapter-react-ui');
-  useWallet = walletAdapter.useWallet;
-  WalletMultiButton = walletAdapterUi.WalletMultiButton;
-} catch (e) {
-  console.warn('Wallet adapter not available, using fallback');
-  const { useWalletFallback, WalletFallback } = require('./WalletFallback');
-  useWallet = useWalletFallback;
-  WalletMultiButton = WalletFallback;
-}
+// Temporarily disable wallet functionality
+const useWallet = () => ({ connected: false, publicKey: null });
+const WalletMultiButton = ({ className }: any) => (
+  <button className={className} onClick={() => alert('Please install Phantom wallet to vote!')}>
+    Connect Wallet
+  </button>
+);
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);

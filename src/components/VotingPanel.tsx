@@ -7,17 +7,8 @@ import {
   subscribeToVotingUpdates 
 } from '../lib/voting-service';
 
-// Safe wallet imports with error handling
-let useWallet: any;
-
-try {
-  const walletAdapter = require('@solana/wallet-adapter-react');
-  useWallet = walletAdapter.useWallet;
-} catch (e) {
-  console.warn('Wallet adapter not available, using fallback');
-  const { useWalletFallback } = require('./WalletFallback');
-  useWallet = useWalletFallback;
-}
+// Temporarily disable wallet functionality
+const useWallet = () => ({ connected: false, publicKey: null });
 
 interface VotingItem extends VotingToken {
   userVoted?: boolean;
@@ -43,7 +34,7 @@ const VotingPanel = () => {
         // If Supabase is not configured, show sample data with real metadata
         if (!isSupabaseConfigured) {
           console.log('Supabase not configured, fetching token metadata for demo...');
-          const { createSampleTokensWithMetadata } = await import('../lib/voting-service');
+          const { createSampleTokensWithMetadata } = require('../lib/voting-service');
           const sampleTokens = await createSampleTokensWithMetadata();
           
           const tokensWithVoteStatus = sampleTokens.map(token => ({

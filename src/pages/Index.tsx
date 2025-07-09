@@ -31,9 +31,9 @@ const Index = () => {
         {/* Charts Section */}
         <section id="charts" className="py-12 px-4">
           <div className="container mx-auto max-w-7xl">
-            <div className="grid lg:grid-cols-3 gap-6">
+            <div className="grid lg:grid-cols-5 gap-6">
               {/* Left Column - Two charts stacked */}
-              <div className="lg:col-span-2 space-y-6">
+              <div className="lg:col-span-3 space-y-6">
                 {/* Trading Chart */}
                 <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
                   <InteractiveChart />
@@ -47,7 +47,7 @@ const Index = () => {
               </div>
               
               {/* Right Column - Token Distribution */}
-              <div className="lg:col-span-1">
+              <div className="lg:col-span-2">
                 <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
                   <h3 className="text-lg font-black text-gray-900 mb-4">Token Distribution</h3>
                   <div className="h-80">

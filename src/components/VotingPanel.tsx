@@ -25,6 +25,77 @@ const VotingPanel = () => {
   const [votingStates, setVotingStates] = useState<{ [key: string]: boolean }>({});
   
   const VOTE_GOAL = 25;
+  const SOLANA_TRACKER_API_KEY = 'ab5915df-4f94-449a-96c5-c37cbc92ef47';
+
+  // Fetch token metadata from Solana Tracker API
+  const fetchTokenMetadata = async (contractAddress: string): Promise<{name: string, symbol: string, image?: string} | null> => {
+    try {
+      console.log(`🔍 Fetching voting token metadata for: ${contractAddress}`);
+      
+      const response = await fetch(
+        `https://data.solanatracker.io/tokens/${contractAddress}`,
+        {
+          headers: {
+            'x-api-key': SOLANA_TRACKER_API_KEY,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        console.log(`❌ API Error for ${contractAddress}: ${response.status}`);
+        return null;
+      }
+
+      const result = await response.json();
+      const tokenData = result.token;
+      
+      if (!tokenData) {
+        console.log(`⚠️ No token data found for ${contractAddress}`);
+        return null;
+      }
+
+      const metadata = {
+        name: tokenData.name || 'Unknown Token',
+        symbol: tokenData.symbol || 'UNKNOWN',
+        image: tokenData.image
+      };
+
+      console.log(`✅ Fetched voting token metadata for ${contractAddress}:`, metadata);
+      return metadata;
+    } catch (err) {
+      console.error(`💥 Error fetching voting token metadata for ${contractAddress}:`, err);
+      return null;
+    }
+  };
+
+  // Enhance tokens with fresh metadata
+  const enhanceTokensWithMetadata = async (tokens: VotableToken[]): Promise<VotingItem[]> => {
+    const enhancedTokens = await Promise.all(
+      tokens.map(async (token) => {
+        // Try to fetch fresh metadata from API
+        const apiMetadata = await fetchTokenMetadata(token.contract_address);
+        
+        if (apiMetadata) {
+          // Use API metadata if available
+          return {
+            ...token,
+            name: apiMetadata.name,
+            symbol: apiMetadata.symbol,
+            image: apiMetadata.image || token.image_url
+          };
+        }
+        
+        // Fallback to database values, mapping field names correctly
+        return {
+          ...token,
+          symbol: token.ticker, // Map ticker to symbol
+          image: token.image_url // Map image_url to image
+        };
+      })
+    );
+
+    return enhancedTokens as VotingItem[];
+  };
 
   // Load initial data
   useEffect(() => {
@@ -37,6 +108,10 @@ const VotingPanel = () => {
         // Fetch tokens first
         const tokens = await fetchVotableTokens();
         console.log('Tokens from Supabase:', tokens);
+        
+        // Enhance tokens with fresh metadata
+        const enhancedTokens = await enhanceTokensWithMetadata(tokens);
+        console.log('Enhanced tokens with metadata:', enhancedTokens);
         
         // If wallet is connected, create/get user and their votes
         let userVotes: string[] = [];
@@ -55,7 +130,7 @@ const VotingPanel = () => {
         }
         
         // Mark tokens that user has voted for
-        const tokensWithVoteStatus = tokens.map(token => ({
+        const tokensWithVoteStatus = enhancedTokens.map(token => ({
           ...token,
           userVoted: userVotes.includes(token.id)
         }));
@@ -80,6 +155,9 @@ const VotingPanel = () => {
       try {
         console.log('📨 Real-time update received! Updated tokens:', updatedTokens);
         
+        // Enhance updated tokens with metadata
+        const enhancedUpdatedTokens = await enhanceTokensWithMetadata(updatedTokens);
+        
         // Refresh user votes to maintain accurate state
         let userVotes: string[] = [];
         if (connected && publicKey) {
@@ -90,7 +168,7 @@ const VotingPanel = () => {
           }
         }
         
-        const tokensWithVoteStatus = updatedTokens.map(token => ({
+        const tokensWithVoteStatus = enhancedUpdatedTokens.map(token => ({
           ...token,
           userVoted: userVotes.includes(token.id)
         }));
@@ -198,6 +276,7 @@ const VotingPanel = () => {
             onClick={async () => {
               console.log('🔄 Manual refresh triggered');
               const tokens = await fetchVotableTokens();
+              const enhancedTokens = await enhanceTokensWithMetadata(tokens);
               let userVotes: string[] = [];
               if (connected && publicKey) {
                 const walletAddress = publicKey.toString();
@@ -206,7 +285,7 @@ const VotingPanel = () => {
                   userVotes = await getUserVotedTokens(user.id);
                 }
               }
-              const tokensWithVoteStatus = tokens.map(token => ({
+              const tokensWithVoteStatus = enhancedTokens.map(token => ({
                 ...token,
                 userVoted: userVotes.includes(token.id)
               }));

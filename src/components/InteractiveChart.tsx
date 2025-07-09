@@ -76,12 +76,14 @@ const InteractiveChart: React.FC = () => {
   
   const updateIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch token metadata from Solana Tracker API
+  // Fetch token metadata from Solana Tracker API (with CORS proxy)
   const fetchTokenMetadata = async (tokenMint: string): Promise<{name: string, symbol: string, logo?: string} | null> => {
     try {
-      console.log(`Fetching metadata for token: ${tokenMint}`);
+      console.log(`🔍 Fetching metadata for token: ${tokenMint}`);
+      
+      // Try direct API call first
       const response = await fetch(
-        `https://api.solanatracker.io/tokens/${tokenMint}`,
+        `https://data.solanatracker.io/tokens/${tokenMint}`,
         {
           headers: {
             'x-api-key': SOLANA_TRACKER_API_KEY,
@@ -89,36 +91,95 @@ const InteractiveChart: React.FC = () => {
         }
       );
 
+      console.log(`📡 API Response status for ${tokenMint}: ${response.status}`);
+
       if (!response.ok) {
-        throw new Error(`API Error: ${response.status}`);
+        console.log(`❌ API Error for ${tokenMint}: ${response.status}`);
+        if (response.status === 404) {
+          console.log(`Token ${tokenMint} not found in Solana Tracker database`);
+        }
+        return null;
       }
 
       const result = await response.json();
+      console.log(`📦 Raw API result for ${tokenMint}:`, result);
       
-      return {
-        name: result.name || 'Unknown Token',
-        symbol: result.symbol || 'UNKNOWN',
-        logo: result.logo || result.image
+      // The API returns data in a 'token' object
+      const tokenData = result.token;
+      console.log(`🎯 Token data for ${tokenMint}:`, tokenData);
+      
+      if (!tokenData) {
+        console.log(`⚠️ No token data found for ${tokenMint}`);
+        return null;
+      }
+
+      const metadata = {
+        name: tokenData.name || 'Unknown Token',
+        symbol: tokenData.symbol || 'UNKNOWN',
+        logo: tokenData.image
       };
+
+      console.log(`✅ Parsed metadata for ${tokenMint}:`, metadata);
+      return metadata;
     } catch (err) {
-      console.error(`Error fetching metadata for token ${tokenMint}:`, err);
+      console.error(`💥 Error fetching metadata for token ${tokenMint}:`, err);
       return null;
     }
   };
 
   // Load token metadata for all tokens
   const loadTokenMetadata = async () => {
-    const metadataPromises = tokens.map(async (token) => {
-      const metadata = await fetchTokenMetadata(token.mint);
-      return {
-        ...token,
-        name: metadata?.name || 'Unknown Token',
-        symbol: metadata?.symbol || 'UNKNOWN',
-        logo: metadata?.logo
-      };
-    });
+    console.log('🚀 Loading token metadata...');
+    
+    // Try to fetch from API first, fallback to hardcoded values
+    const updatedTokens = await Promise.all(
+      tokens.map(async (token) => {
+        // Try API first
+        const apiMetadata = await fetchTokenMetadata(token.mint);
+        
+        if (apiMetadata) {
+          return {
+            ...token,
+            name: apiMetadata.name,
+            symbol: apiMetadata.symbol,
+            logo: apiMetadata.logo
+          };
+        }
+        
+        // Fallback to hardcoded metadata for known tokens
+        const fallbackMetadata: {[key: string]: {name: string, symbol: string, logo?: string}} = {
+          'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263': {
+            name: 'Bonk',
+            symbol: 'BONK',
+            logo: 'https://arweave.net/hQiPZOsRZXGXBJd_82PhVdlM_hACsT_q6wqwf5cSY7I'
+          },
+          '9wK8yN6iz1ie5kEJkvZCTxyN1x5sTdNfx8yeMY8Ebonk': {
+            name: 'Token 2',
+            symbol: 'TKN2',
+            logo: undefined
+          },
+          'Dz9mQ9NzkBcCsuGPFJ3r1bS4wgqKMHBPiVuniW8Mbonk': {
+            name: 'Useless Coin',
+            symbol: 'USELESS',
+            logo: undefined
+          },
+          'AtortPA9SVbkKmdzu5zg4jxgkR4howvPshorA9jYbonk': {
+            name: 'Token 4',
+            symbol: 'TKN4',
+            logo: undefined
+          }
+        };
+        
+        const metadata = fallbackMetadata[token.mint];
+        return {
+          ...token,
+          name: metadata?.name || 'Unknown Token',
+          symbol: metadata?.symbol || 'UNKNOWN',
+          logo: metadata?.logo
+        };
+      })
+    );
 
-    const updatedTokens = await Promise.all(metadataPromises);
     setTokens(updatedTokens);
   };
   
@@ -485,9 +546,9 @@ const InteractiveChart: React.FC = () => {
       
       // Create area series
       const areaSeries = chart.addSeries(AreaSeries, { 
-        lineColor: '#2962FF', 
-        topColor: '#2962FF', 
-        bottomColor: 'rgba(41, 98, 255, 0.28)',
+        lineColor: '#FF8C00', 
+        topColor: '#FF8C00', 
+        bottomColor: 'rgba(255, 140, 0, 0.28)',
         priceFormat: {
           type: 'price',
           precision: 9,
@@ -669,7 +730,7 @@ const InteractiveChart: React.FC = () => {
           <div className="flex items-center space-x-2">
             <button
               onClick={fitContent}
-              className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200 transition-colors"
+              className="px-3 py-1 bg-orange-100 text-orange-700 rounded text-sm hover:bg-orange-200 transition-colors"
               title="Fit Content"
             >
               📏 Fit Chart

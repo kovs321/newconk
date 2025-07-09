@@ -2,10 +2,10 @@ import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 const data = [
-  { name: 'BONK', value: 40, color: '#FFA500' },
-  { name: 'SOL', value: 25, color: '#9945FF' },
-  { name: 'USDC', value: 20, color: '#00D4FF' },
-  { name: 'Others', value: 15, color: '#E5E7EB' },
+  { name: 'BONK', value: 25, color: '#FF8C00' },
+  { name: 'Hosico', value: 25, color: '#FF7F00' },
+  { name: 'USELESS', value: 25, color: '#FFA500' },
+  { name: 'IKUN', value: 25, color: '#FF6347' },
 ];
 
 const TokenDistributionChart = () => {

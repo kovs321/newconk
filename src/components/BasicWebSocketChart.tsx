@@ -57,7 +57,7 @@ const BasicWebSocketChart: React.FC = () => {
     });
     
     const lineSeries = chart.addSeries(LineSeries, { 
-      color: '#2962FF',
+      color: '#FF8C00',
       lineWidth: 2,
       priceFormat: {
         type: 'price',

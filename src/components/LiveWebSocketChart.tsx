@@ -42,7 +42,14 @@ const LiveWebSocketChart: React.FC = () => {
   const BUCKET_SIZE = 30; // 30 seconds per bucket
   const MAX_INTENSITY = 100; // Maximum intensity value for color scaling
 
-  const TOKEN_MINT = 'So11111111111111111111111111111111111111111';
+  const TOKEN_MINT = 'So11111111111111111111111111111111111111111'; // SOL wrapped token
+  const ALTERNATIVE_TOKENS = [
+    'So11111111111111111111111111111111111111111', // Wrapped SOL
+    'SOL', // Symbol
+    'solana', // Name
+    '11111111111111111111111111111111', // Native SOL
+    'So1111111111111111111111111111111111111111' // Alternative format
+  ];
   const SOLANA_TRACKER_WS_URL = 'wss://datastream.solanatracker.io/d4fc0684-2e18-4de4-abab-cbe984738ea7';
   
   const reconnectDelay = 2500;
@@ -241,19 +248,36 @@ const LiveWebSocketChart: React.FC = () => {
       return;
     }
 
-    const priceSubscription = {
-      type: 'join',
-      room: `price:${TOKEN_MINT}`
-    };
+    // Try multiple subscription formats with different token representations
+    const subscriptions: any[] = [];
+    
+    ALTERNATIVE_TOKENS.forEach(token => {
+      subscriptions.push(
+        { type: 'join', room: `price:${token}` },
+        { type: 'join', room: `token:${token}` },
+        { type: 'subscribe', channel: `price:${token}` },
+        { type: 'subscribe', token: token }
+      );
+    });
 
-    try {
-      wsRef.current.send(JSON.stringify(priceSubscription));
-      console.log(`Subscribed to live price updates for token: ${TOKEN_MINT}`);
-      console.log('Subscription message sent:', priceSubscription);
-    } catch (error) {
-      console.error('Error sending subscription:', error);
-      setError('Failed to subscribe to price updates');
-    }
+    // Also try some generic subscriptions
+    subscriptions.push(
+      { type: 'join', room: 'prices' },
+      { type: 'join', room: 'all' },
+      { type: 'subscribe', channel: 'prices' },
+      { type: 'subscribe', channel: 'all' }
+    );
+
+    subscriptions.forEach(subscription => {
+      try {
+        wsRef.current!.send(JSON.stringify(subscription));
+        console.log('Subscription attempt sent:', subscription);
+      } catch (error) {
+        console.error('Error sending subscription:', error);
+      }
+    });
+
+    console.log(`Attempted multiple subscription formats for token: ${TOKEN_MINT}`);
   };
 
   const handleWebSocketMessage = (message: any) => {
@@ -263,71 +287,77 @@ const LiveWebSocketChart: React.FC = () => {
     console.log('Expected room:', `price:${TOKEN_MINT}`);
     
     if (message.type === 'message') {
-      if (message.room === `price:${TOKEN_MINT}`) {
+      // Check if this is a price update from any room
+      if (message.room && message.room.includes('price') && message.data) {
         const priceData = message.data;
-        console.log('Live price update received:', priceData);
+        console.log('Live price update received from room:', message.room);
+        console.log('Price data:', priceData);
         
-        const timestamp = Math.floor(priceData.time / 1000);
-        const price = priceData.price;
+        // Try to extract price and time from different possible formats
+        let price = priceData.price || priceData.value || priceData.close || priceData.last;
+        let time = priceData.time || priceData.timestamp || Date.now();
         
-        // Update current price with direction
-        setCurrentPrice(prevPrice => {
-          if (prevPrice !== null) {
-            setPriceDirection(price > prevPrice ? 'up' : 'down');
-            setTimeout(() => setPriceDirection(null), 1000);
-          }
-          return price;
-        });
-
-        // Add to regular data array for reference
-        setData(prevData => {
-          const newData = [...prevData, { time: timestamp, value: price }];
-          if (newData.length > 1000) {
-            newData.splice(0, newData.length - 1000);
-          }
-          return newData;
-        });
-
-        // Process into heatmap buckets
-        const bucketTime = getCurrentBucketTime(timestamp);
-        
-        setCurrentBucket(prevBucket => {
-          let updatedBucket: HeatMapBucket;
+          if (price && time) {
+            const timestamp = Math.floor(time / 1000);
           
-          if (!prevBucket || prevBucket.time !== bucketTime) {
-            // New bucket - finalize previous one if exists
-            if (prevBucket) {
-              const finalIntensity = calculateIntensity(prevBucket.prices);
-              const avgPrice = prevBucket.prices.reduce((sum, p) => sum + p, 0) / prevBucket.prices.length;
+            // Update current price with direction
+            setCurrentPrice(prevPrice => {
+              if (prevPrice !== null) {
+                setPriceDirection(price > prevPrice ? 'up' : 'down');
+                setTimeout(() => setPriceDirection(null), 1000);
+              }
+              return price;
+            });
+
+            // Add to regular data array for reference
+            setData(prevData => {
+              const newData = [...prevData, { time: timestamp, value: price }];
+              if (newData.length > 1000) {
+                newData.splice(0, newData.length - 1000);
+              }
+              return newData;
+            });
+
+            // Process into heatmap buckets
+            const bucketTime = getCurrentBucketTime(timestamp);
+            
+            setCurrentBucket(prevBucket => {
+              let updatedBucket: HeatMapBucket;
               
-              const heatmapPoint: HeatMapData = {
-                time: prevBucket.time as Time,
-                value: avgPrice,
-                amount: finalIntensity
-              };
-              
-              setHeatmapData(prevHeatmap => {
-                const newHeatmap = [...prevHeatmap, heatmapPoint];
-                if (newHeatmap.length > 200) {
-                  newHeatmap.splice(0, newHeatmap.length - 200);
+              if (!prevBucket || prevBucket.time !== bucketTime) {
+                // New bucket - finalize previous one if exists
+                if (prevBucket) {
+                  const finalIntensity = calculateIntensity(prevBucket.prices);
+                  const avgPrice = prevBucket.prices.reduce((sum, p) => sum + p, 0) / prevBucket.prices.length;
+                  
+                  const heatmapPoint: HeatMapData = {
+                    time: prevBucket.time as Time,
+                    value: avgPrice,
+                    amount: finalIntensity
+                  };
+                  
+                  setHeatmapData(prevHeatmap => {
+                    const newHeatmap = [...prevHeatmap, heatmapPoint];
+                    if (newHeatmap.length > 200) {
+                      newHeatmap.splice(0, newHeatmap.length - 200);
+                    }
+                    
+                    // Update chart with the new point
+                    if (seriesRef.current) {
+                      try {
+                        const chartPoint = {
+                          time: heatmapPoint.time,
+                          value: heatmapPoint.value
+                        };
+                        seriesRef.current.update(chartPoint);
+                      } catch (error) {
+                        console.error('Error updating chart:', error);
+                      }
+                    }
+                    
+                    return newHeatmap;
+                  });
                 }
-                
-                // Update chart with the new point
-                if (seriesRef.current) {
-                  try {
-                    const chartPoint = {
-                      time: heatmapPoint.time,
-                      value: heatmapPoint.value
-                    };
-                    seriesRef.current.update(chartPoint);
-                  } catch (error) {
-                    console.error('Error updating chart:', error);
-                  }
-                }
-                
-                return newHeatmap;
-              });
-            }
             
             // Start new bucket
             updatedBucket = {
@@ -348,20 +378,24 @@ const LiveWebSocketChart: React.FC = () => {
             };
           }
           
-          // Calculate current intensity for display
-          const currentIntensity = calculateIntensity(updatedBucket.prices);
-          setCurrentIntensity(currentIntensity);
-          
-          return updatedBucket;
-        });
+              // Calculate current intensity for display
+              const currentIntensity = calculateIntensity(updatedBucket.prices);
+              setCurrentIntensity(currentIntensity);
+              
+              return updatedBucket;
+            });
 
-        // Auto-scroll to keep latest data visible
-        if (chartRef.current) {
-          const timeScale = chartRef.current.timeScale();
-          const logicalRange = timeScale.getVisibleLogicalRange();
-          
-          if (logicalRange && logicalRange.to > heatmapData.length - 5) {
-            timeScale.scrollToRealTime();
+            // Auto-scroll to keep latest data visible
+            if (chartRef.current) {
+              const timeScale = chartRef.current.timeScale();
+              const logicalRange = timeScale.getVisibleLogicalRange();
+              
+              if (logicalRange && logicalRange.to > heatmapData.length - 5) {
+                timeScale.scrollToRealTime();
+              }
+            }
+          } else {
+            console.log('No price/time data found in message:', priceData);
           }
         } else {
           console.log('Message from different room:', message.room);

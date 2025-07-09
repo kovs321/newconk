@@ -42,7 +42,7 @@ const LiveWebSocketChart: React.FC = () => {
   const BUCKET_SIZE = 30; // 30 seconds per bucket
   const MAX_INTENSITY = 100; // Maximum intensity value for color scaling
 
-  const TOKEN_MINT = 'DHJVYXsikcimtcVo49FAZqYd1XPYPaXezYhbKArJbonk';
+  const TOKEN_MINT = 'So11111111111111111111111111111111111111111';
   const SOLANA_TRACKER_WS_URL = 'wss://datastream.solanatracker.io/d4fc0684-2e18-4de4-abab-cbe984738ea7';
   
   const reconnectDelay = 2500;

@@ -197,9 +197,12 @@ const LiveWebSocketChart: React.FC = () => {
     ws.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
+        console.log('Raw WebSocket message:', event.data);
+        console.log('Parsed message:', message);
         handleWebSocketMessage(message);
       } catch (error) {
         console.error('Error parsing WebSocket message:', error);
+        console.error('Raw message data:', event.data);
       }
     };
 
@@ -255,6 +258,10 @@ const LiveWebSocketChart: React.FC = () => {
 
   const handleWebSocketMessage = (message: any) => {
     console.log('WebSocket message received:', message);
+    console.log('Message type:', message.type);
+    console.log('Message room:', message.room);
+    console.log('Expected room:', `price:${TOKEN_MINT}`);
+    
     if (message.type === 'message') {
       if (message.room === `price:${TOKEN_MINT}`) {
         const priceData = message.data;
@@ -356,8 +363,24 @@ const LiveWebSocketChart: React.FC = () => {
           if (logicalRange && logicalRange.to > heatmapData.length - 5) {
             timeScale.scrollToRealTime();
           }
+        } else {
+          console.log('Message from different room:', message.room);
+          console.log('Message data:', message.data);
         }
+      } else if (message.type === 'join') {
+        console.log('Join confirmation received:', message);
+      } else if (message.type === 'ping') {
+        console.log('Ping received:', message);
+        // Respond to ping with pong
+        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+          wsRef.current.send(JSON.stringify({ type: 'pong' }));
+        }
+      } else {
+        console.log('Non-message type received:', message.type);
+        console.log('Full message:', message);
       }
+    } else {
+      console.log('Message without type field:', message);
     }
   };
 

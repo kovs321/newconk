@@ -10,6 +10,7 @@ import PitchDeck from '../components/PitchDeck';
 import HowItWorks from '../components/HowItWorks';
 import { Header } from '../components/Header';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import RotatingText from '../components/RotatingText';
 
 const Index = () => {
   return (
@@ -21,7 +22,20 @@ const Index = () => {
         {/* Hero Section */}
         <section className="py-12 px-4">
           <div className="container mx-auto text-center">
-            <h2 className="text-5xl font-black text-gray-900 mb-4">BONK STRATEGY</h2>
+            <h2 className="text-5xl font-black mb-4">
+              <RotatingText
+                texts={['BONK STRATEGY', 'TOKEN REWARDS', 'COMMUNITY POWER', 'BONK STRATEGY']}
+                mainClassName="px-2 sm:px-2 md:px-3 bg-orange-500 text-white overflow-hidden py-0.5 sm:py-1 md:py-2 justify-center rounded-lg inline-block"
+                staggerFrom="last"
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "-120%" }}
+                staggerDuration={0.025}
+                splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 md:pb-1"
+                transition={{ type: "spring", damping: 30, stiffness: 400 }}
+                rotationInterval={2000}
+              />
+            </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               Diversified token rewards distribution strategy with community-driven governance
             </p>

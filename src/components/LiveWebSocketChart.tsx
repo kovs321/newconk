@@ -114,6 +114,51 @@ const LiveWebSocketChart: React.FC = () => {
     }
   }, []);
 
+  // Handle price updates
+  const handlePriceUpdate = (priceData: any) => {
+    const newPoint: PriceData = {
+      time: Math.floor(priceData.time / 1000), // Convert to seconds
+      value: priceData.price
+    };
+
+    // Update current price with direction
+    setCurrentPrice(prevPrice => {
+      if (prevPrice !== null) {
+        setPriceDirection(priceData.price > prevPrice ? 'up' : 'down');
+        setTimeout(() => setPriceDirection(null), 1000);
+      }
+      return priceData.price;
+    });
+
+    // Add to chart data
+    setData(prevData => {
+      const newData = [...prevData, newPoint];
+      
+      // Keep only last 1000 points for performance
+      if (newData.length > 1000) {
+        newData.splice(0, newData.length - 1000);
+      }
+      
+      return newData;
+    });
+
+    // Update chart
+    if (seriesRef.current) {
+      seriesRef.current.update(newPoint);
+      
+      // Auto-scroll to keep latest data visible
+      if (chartRef.current) {
+        const timeScale = chartRef.current.timeScale();
+        const logicalRange = timeScale.getVisibleLogicalRange();
+        
+        // If we're close to the right edge, scroll to show new data
+        if (logicalRange && logicalRange.to > data.length - 10) {
+          timeScale.scrollToRealTime();
+        }
+      }
+    }
+  };
+
   // Initialize Datastream and connect
   useEffect(() => {
     const initializeDatastream = async () => {
@@ -154,55 +199,27 @@ const LiveWebSocketChart: React.FC = () => {
         // Connect to the WebSocket server
         await datastream.connect();
 
-        // Subscribe to price updates for SOL token
+        // Subscribe to price updates for token - try both methods
         console.log(`Subscribing to price updates for token: ${TOKEN_MINT}`);
-        const priceSubscription = datastream.subscribe.price.allPoolsForToken(TOKEN_MINT).on((priceData) => {
-          console.log('Live price update received:', priceData);
-          
-          const newPoint: PriceData = {
-            time: Math.floor(priceData.time / 1000), // Convert to seconds
-            value: priceData.price
-          };
-
-          // Update current price with direction
-          setCurrentPrice(prevPrice => {
-            if (prevPrice !== null) {
-              setPriceDirection(priceData.price > prevPrice ? 'up' : 'down');
-              setTimeout(() => setPriceDirection(null), 1000);
-            }
-            return priceData.price;
-          });
-
-          // Add to chart data
-          setData(prevData => {
-            const newData = [...prevData, newPoint];
-            
-            // Keep only last 1000 points for performance
-            if (newData.length > 1000) {
-              newData.splice(0, newData.length - 1000);
-            }
-            
-            return newData;
-          });
-
-          // Update chart
-          if (seriesRef.current) {
-            seriesRef.current.update(newPoint);
-            
-            // Auto-scroll to keep latest data visible
-            if (chartRef.current) {
-              const timeScale = chartRef.current.timeScale();
-              const logicalRange = timeScale.getVisibleLogicalRange();
-              
-              // If we're close to the right edge, scroll to show new data
-              if (logicalRange && logicalRange.to > data.length - 10) {
-                timeScale.scrollToRealTime();
-              }
-            }
-          }
+        
+        // First try the main pool subscription
+        const priceSubscription = datastream.subscribe.price.token(TOKEN_MINT).on((priceData) => {
+          console.log('Live price update received (main pool):', priceData);
+          handlePriceUpdate(priceData);
         });
 
-        subscriptionRef.current = priceSubscription;
+        // Also try all pools subscription as fallback
+        const allPoolsSubscription = datastream.subscribe.price.allPoolsForToken(TOKEN_MINT).on((priceData) => {
+          console.log('Live price update received (all pools):', priceData);
+          handlePriceUpdate(priceData);
+        });
+
+        // Test with SOL to verify connection works
+        const solSubscription = datastream.subscribe.price.token('So11111111111111111111111111111111111111111').on((priceData) => {
+          console.log('SOL price update received (connection test):', priceData);
+        });
+
+        subscriptionRef.current = { priceSubscription, allPoolsSubscription, solSubscription };
 
       } catch (error) {
         console.error('Error initializing Datastream:', error);
@@ -216,7 +233,15 @@ const LiveWebSocketChart: React.FC = () => {
     return () => {
       // Cleanup on unmount
       if (subscriptionRef.current) {
-        subscriptionRef.current.unsubscribe();
+        if (subscriptionRef.current.priceSubscription) {
+          subscriptionRef.current.priceSubscription.unsubscribe();
+        }
+        if (subscriptionRef.current.allPoolsSubscription) {
+          subscriptionRef.current.allPoolsSubscription.unsubscribe();
+        }
+        if (subscriptionRef.current.solSubscription) {
+          subscriptionRef.current.solSubscription.unsubscribe();
+        }
         subscriptionRef.current = null;
       }
       if (datastreamRef.current) {

@@ -161,10 +161,10 @@ const InteractiveChart: React.FC = () => {
     }
   };
 
-  // Calculate averaged data from multiple tokens
+  // Calculate percentage-based averaged data from multiple tokens
   const calculateAverageData = (tokenDataMap: { [tokenMint: string]: TokenData[] }): ChartData[] => {
     try {
-      console.log('Calculating average data from', Object.keys(tokenDataMap).length, 'tokens');
+      console.log('Calculating percentage-based average data from', Object.keys(tokenDataMap).length, 'tokens');
       
       // Get all unique timestamps
       const allTimestamps = new Set<number>();
@@ -174,35 +174,75 @@ const InteractiveChart: React.FC = () => {
 
       const sortedTimestamps = Array.from(allTimestamps).sort((a, b) => a - b);
       
-      const averagedData: ChartData[] = [];
+      // Calculate baseline prices for each token (first available price)
+      const baselinePrices: { [tokenMint: string]: number } = {};
+      Object.entries(tokenDataMap).forEach(([mint, data]) => {
+        if (data.length > 0) {
+          baselinePrices[mint] = data[0].close;
+        }
+      });
+      
+      const percentageChanges: ChartData[] = [];
       
       sortedTimestamps.forEach(timestamp => {
-        const prices: number[] = [];
+        const changes: number[] = [];
         
-        // Collect prices for this timestamp from all tokens
-        Object.values(tokenDataMap).forEach(tokenData => {
+        // Calculate percentage changes for each token at this timestamp
+        Object.entries(tokenDataMap).forEach(([mint, tokenData]) => {
           const dataPoint = tokenData.find(item => item.time === timestamp);
-          if (dataPoint && dataPoint.close > 0) {
-            prices.push(dataPoint.close);
+          const baseline = baselinePrices[mint];
+          
+          if (dataPoint && baseline && dataPoint.close > 0 && baseline > 0) {
+            const percentageChange = ((dataPoint.close - baseline) / baseline) * 100;
+            // Filter out extreme outliers (>500% change)
+            if (Math.abs(percentageChange) < 500) {
+              changes.push(percentageChange);
+            }
           }
         });
         
         // Only include timestamp if we have data from at least 2 tokens
-        if (prices.length >= 2) {
-          const averagePrice = prices.reduce((sum, price) => sum + price, 0) / prices.length;
-          averagedData.push({
+        if (changes.length >= 2) {
+          const averageChange = changes.reduce((sum, change) => sum + change, 0) / changes.length;
+          percentageChanges.push({
             time: timestamp,
-            value: averagePrice
+            value: averageChange
           });
         }
       });
 
-      console.log('Generated', averagedData.length, 'averaged data points');
-      return averagedData;
+      // Apply moving average smoothing (5-period moving average)
+      const smoothedData = applyMovingAverage(percentageChanges, 5);
+      
+      // Convert percentage changes back to price-like values (normalized to 0.1 baseline)
+      const normalizedData = smoothedData.map(item => ({
+        time: item.time,
+        value: 0.1 * (1 + item.value / 100) // Normalize around 0.1 baseline
+      }));
+
+      console.log('Generated', normalizedData.length, 'smoothed normalized data points');
+      return normalizedData;
     } catch (err) {
       console.error('Error calculating average data:', err);
       return [];
     }
+  };
+
+  // Apply moving average smoothing
+  const applyMovingAverage = (data: ChartData[], period: number): ChartData[] => {
+    if (data.length < period) return data;
+    
+    const smoothedData: ChartData[] = [];
+    
+    for (let i = period - 1; i < data.length; i++) {
+      const sum = data.slice(i - period + 1, i + 1).reduce((acc, item) => acc + item.value, 0);
+      smoothedData.push({
+        time: data[i].time,
+        value: sum / period
+      });
+    }
+    
+    return smoothedData;
   };
 
   // Update individual token prices and statuses
@@ -292,9 +332,9 @@ const InteractiveChart: React.FC = () => {
     
     updateIntervalRef.current = setInterval(() => {
       fetchLatestData();
-    }, 1000); // Update every second
+    }, 5000); // Update every 5 seconds to reduce noise
     
-    console.log('Started real-time updates (1 second interval)');
+    console.log('Started real-time updates (5 second interval)');
   };
 
   const stopRealTimeUpdates = () => {
@@ -467,7 +507,7 @@ const InteractiveChart: React.FC = () => {
 
   const formatPrice = (price: number | null) => {
     if (price === null) return '--';
-    return price.toFixed(9);
+    return price.toFixed(6);
   };
 
   if (loading) {
@@ -487,9 +527,9 @@ const InteractiveChart: React.FC = () => {
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-black text-gray-900">4-Token Average Chart</h3>
+            <h3 className="text-lg font-black text-gray-900">4-Token Normalized Average</h3>
             <p className="text-sm text-gray-600">
-              Averaged price from {tokens.filter(t => t.status === 'active').length}/4 tokens
+              Smoothed percentage-based average from {tokens.filter(t => t.status === 'active').length}/4 tokens
             </p>
           </div>
           <div className="flex items-center space-x-4">
@@ -591,7 +631,7 @@ const InteractiveChart: React.FC = () => {
       {/* Footer */}
       <div className="px-4 pb-4">
         <div className="text-xs text-gray-500 text-center">
-          {error ? 'Sample data displayed' : 'Real-time averaged updates from 4 tokens every second via Solana Tracker API'}
+          {error ? 'Sample data displayed' : 'Real-time smoothed updates from 4 tokens every 5 seconds via Solana Tracker API'}
         </div>
       </div>
     </div>

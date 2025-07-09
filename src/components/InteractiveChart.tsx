@@ -174,119 +174,110 @@ const InteractiveChart: React.FC = () => {
     }
   };
 
-  // Initialize chart after container is available
+  // Initialize chart when data is available
   useEffect(() => {
-    const initChart = () => {
-      if (!chartContainerRef.current) {
-        console.log('Chart container ref not available, retrying...');
-        setTimeout(initChart, 100);
-        return;
-      }
-
-      console.log('Initializing chart...', chartContainerRef.current);
-    
-      try {
-        const chart = createChart(chartContainerRef.current, {
-          layout: { 
-            textColor: 'black', 
-            background: { type: 'solid', color: 'white' } 
-          },
-          width: chartContainerRef.current.clientWidth,
-          height: 400,
-          grid: {
-            vertLines: { color: '#f0f3fa' },
-            horzLines: { color: '#f0f3fa' },
-          },
-          crosshair: { mode: 1 },
-          timeScale: {
-            timeVisible: true,
-            secondsVisible: false,
-          },
-          rightPriceScale: {
-            scaleMargins: { top: 0.1, bottom: 0.1 },
-            borderVisible: true,
-            borderColor: '#D1D5DB',
-            textColor: '#333333',
-            entireTextOnly: false,
-            ticksVisible: true,
-          },
-          handleScroll: {
-            mouseWheel: true,
-            pressedMouseMove: true,
-          },
-          handleScale: {
-            mouseWheel: true,
-            pinch: true,
-          },
-        });
-        
-        // Create area series
-        const areaSeries = chart.addSeries(AreaSeries, { 
-          lineColor: '#2962FF', 
-          topColor: '#2962FF', 
-          bottomColor: 'rgba(41, 98, 255, 0.28)',
-          priceFormat: {
-            type: 'price',
-            precision: 9,
-            minMove: 0.000000001,
-          },
-        });
-
-        chartRef.current = chart;
-        seriesRef.current = areaSeries;
-
-        console.log('Chart initialized successfully', { chart, areaSeries });
-
-        // Handle resize
-        const handleResize = () => {
-          if (chartContainerRef.current && chartRef.current) {
-            chartRef.current.applyOptions({ 
-              width: chartContainerRef.current.clientWidth,
-              height: 400
-            });
-          }
-        };
-
-        window.addEventListener('resize', handleResize);
-
-      } catch (error) {
-        console.error('Error initializing chart:', error);
-        setError('Failed to initialize chart');
-      }
-    };
-    
-    initChart();
-    
-    // Cleanup function
-    return () => {
-      if (chartRef.current) {
-        chartRef.current.remove();
-        chartRef.current = null;
-        seriesRef.current = null;
-      }
-    };
-  }, []); // Initialize only once, not on data changes
-
-  // Update chart when data changes
-  useEffect(() => {
-    console.log('Data changed:', data.length, 'points');
-    if (seriesRef.current && data.length > 0) {
-      console.log('Setting data to series:', data.slice(-3)); // Show last 3 points
-      seriesRef.current.setData(data);
-      
-      // Always set zoom range to ensure chart is visible
-      if (chartRef.current) {
-        const lastTime = data[data.length - 1].time;
-        const sixHoursAgo = lastTime - (6 * 60 * 60);
-        
-        console.log('Setting zoom range:', { from: sixHoursAgo, to: lastTime + (30 * 60) });
-        chartRef.current.timeScale().setVisibleRange({
-          from: sixHoursAgo,
-          to: lastTime + (30 * 60)
-        });
-      }
+    if (!chartContainerRef.current || data.length === 0) {
+      return;
     }
-  }, [data]);
+
+    // Clear existing chart
+    if (chartRef.current) {
+      chartRef.current.remove();
+      chartRef.current = null;
+      seriesRef.current = null;
+    }
+
+    console.log('Initializing chart with', data.length, 'data points');
+    
+    try {
+      const chart = createChart(chartContainerRef.current, {
+        layout: { 
+          textColor: 'black', 
+          background: { type: 'solid', color: 'white' } 
+        },
+        width: chartContainerRef.current.clientWidth,
+        height: 400,
+        grid: {
+          vertLines: { color: '#f0f3fa' },
+          horzLines: { color: '#f0f3fa' },
+        },
+        crosshair: { mode: 1 },
+        timeScale: {
+          timeVisible: true,
+          secondsVisible: false,
+        },
+        rightPriceScale: {
+          scaleMargins: { top: 0.1, bottom: 0.1 },
+          borderVisible: true,
+          borderColor: '#D1D5DB',
+          textColor: '#333333',
+          entireTextOnly: false,
+          ticksVisible: true,
+        },
+        handleScroll: {
+          mouseWheel: true,
+          pressedMouseMove: true,
+        },
+        handleScale: {
+          mouseWheel: true,
+          pinch: true,
+        },
+      });
+      
+      // Create area series
+      const areaSeries = chart.addSeries(AreaSeries, { 
+        lineColor: '#2962FF', 
+        topColor: '#2962FF', 
+        bottomColor: 'rgba(41, 98, 255, 0.28)',
+        priceFormat: {
+          type: 'price',
+          precision: 9,
+          minMove: 0.000000001,
+        },
+      });
+
+      // Set data immediately
+      areaSeries.setData(data);
+      
+      // Set zoom range
+      const lastTime = data[data.length - 1].time;
+      const sixHoursAgo = lastTime - (6 * 60 * 60);
+      chart.timeScale().setVisibleRange({
+        from: sixHoursAgo,
+        to: lastTime + (30 * 60)
+      });
+
+      chartRef.current = chart;
+      seriesRef.current = areaSeries;
+
+      console.log('Chart initialized successfully with data');
+
+      // Handle resize
+      const handleResize = () => {
+        if (chartContainerRef.current && chartRef.current) {
+          chartRef.current.applyOptions({ 
+            width: chartContainerRef.current.clientWidth,
+            height: 400
+          });
+        }
+      };
+
+      window.addEventListener('resize', handleResize);
+
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        if (chartRef.current) {
+          chartRef.current.remove();
+          chartRef.current = null;
+          seriesRef.current = null;
+        }
+      };
+    } catch (error) {
+      console.error('Error initializing chart:', error);
+      setError('Failed to initialize chart');
+    }
+  }, [data]); // Re-initialize when data changes
+
 
 
   // Load data on mount

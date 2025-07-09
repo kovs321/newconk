@@ -174,91 +174,97 @@ const InteractiveChart: React.FC = () => {
     }
   };
 
-  // Initialize chart on mount
+  // Initialize chart after container is available
   useEffect(() => {
-    if (!chartContainerRef.current) {
-      console.log('Chart container ref not available');
-      return;
-    }
+    const initChart = () => {
+      if (!chartContainerRef.current) {
+        console.log('Chart container ref not available, retrying...');
+        setTimeout(initChart, 100);
+        return;
+      }
 
-    console.log('Initializing chart...', chartContainerRef.current);
+      console.log('Initializing chart...', chartContainerRef.current);
     
-    try {
-      const chart = createChart(chartContainerRef.current, {
-        layout: { 
-          textColor: 'black', 
-          background: { type: 'solid', color: 'white' } 
-        },
-        width: chartContainerRef.current.clientWidth,
-        height: 400,
-        grid: {
-          vertLines: { color: '#f0f3fa' },
-          horzLines: { color: '#f0f3fa' },
-        },
-        crosshair: { mode: 1 },
-        timeScale: {
-          timeVisible: true,
-          secondsVisible: false,
-        },
-        rightPriceScale: {
-          scaleMargins: { top: 0.1, bottom: 0.1 },
-          borderVisible: true,
-          borderColor: '#D1D5DB',
-          textColor: '#333333',
-          entireTextOnly: false,
-          ticksVisible: true,
-        },
-        handleScroll: {
-          mouseWheel: true,
-          pressedMouseMove: true,
-        },
-        handleScale: {
-          mouseWheel: true,
-          pinch: true,
-        },
-      });
-      
-      // Create area series
-      const areaSeries = chart.addSeries(AreaSeries, { 
-        lineColor: '#2962FF', 
-        topColor: '#2962FF', 
-        bottomColor: 'rgba(41, 98, 255, 0.28)',
-        priceFormat: {
-          type: 'price',
-          precision: 9,
-          minMove: 0.000000001,
-        },
-      });
+      try {
+        const chart = createChart(chartContainerRef.current, {
+          layout: { 
+            textColor: 'black', 
+            background: { type: 'solid', color: 'white' } 
+          },
+          width: chartContainerRef.current.clientWidth,
+          height: 400,
+          grid: {
+            vertLines: { color: '#f0f3fa' },
+            horzLines: { color: '#f0f3fa' },
+          },
+          crosshair: { mode: 1 },
+          timeScale: {
+            timeVisible: true,
+            secondsVisible: false,
+          },
+          rightPriceScale: {
+            scaleMargins: { top: 0.1, bottom: 0.1 },
+            borderVisible: true,
+            borderColor: '#D1D5DB',
+            textColor: '#333333',
+            entireTextOnly: false,
+            ticksVisible: true,
+          },
+          handleScroll: {
+            mouseWheel: true,
+            pressedMouseMove: true,
+          },
+          handleScale: {
+            mouseWheel: true,
+            pinch: true,
+          },
+        });
+        
+        // Create area series
+        const areaSeries = chart.addSeries(AreaSeries, { 
+          lineColor: '#2962FF', 
+          topColor: '#2962FF', 
+          bottomColor: 'rgba(41, 98, 255, 0.28)',
+          priceFormat: {
+            type: 'price',
+            precision: 9,
+            minMove: 0.000000001,
+          },
+        });
 
-      chartRef.current = chart;
-      seriesRef.current = areaSeries;
+        chartRef.current = chart;
+        seriesRef.current = areaSeries;
 
-      console.log('Chart initialized successfully', { chart, areaSeries });
+        console.log('Chart initialized successfully', { chart, areaSeries });
 
-      // Handle resize
-      const handleResize = () => {
-        if (chartContainerRef.current && chartRef.current) {
-          chartRef.current.applyOptions({ 
-            width: chartContainerRef.current.clientWidth,
-            height: 400
-          });
-        }
-      };
+        // Handle resize
+        const handleResize = () => {
+          if (chartContainerRef.current && chartRef.current) {
+            chartRef.current.applyOptions({ 
+              width: chartContainerRef.current.clientWidth,
+              height: 400
+            });
+          }
+        };
 
-      window.addEventListener('resize', handleResize);
+        window.addEventListener('resize', handleResize);
 
-      return () => {
-        window.removeEventListener('resize', handleResize);
-        if (chartRef.current) {
-          chartRef.current.remove();
-          chartRef.current = null;
-          seriesRef.current = null;
-        }
-      };
-    } catch (error) {
-      console.error('Error initializing chart:', error);
-      setError('Failed to initialize chart');
-    }
+      } catch (error) {
+        console.error('Error initializing chart:', error);
+        setError('Failed to initialize chart');
+      }
+    };
+    
+    initChart();
+    
+    // Cleanup function
+    return () => {
+      if (chartRef.current) {
+        chartRef.current.remove();
+        chartRef.current = null;
+        seriesRef.current = null;
+      }
+    };
   }, []); // Initialize only once, not on data changes
 
   // Update chart when data changes

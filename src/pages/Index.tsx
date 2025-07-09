@@ -111,7 +111,7 @@ const Index = () => {
         {/* Scroll Velocity Section */}
         <section className="py-16 bg-orange-500">
           <ScrollVelocity
-            texts={['BONK STRATEGY', 'TOKEN REWARDS']}
+            texts={['WIN REWARDS', 'BECOME A MEMBER']}
             velocity={100}
             className="text-white font-black"
             numCopies={8}

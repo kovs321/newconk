@@ -35,9 +35,17 @@ export const Header = () => {
             <a href="#how" className="text-gray-700 hover:text-gray-900 transition-colors">How it Works</a>
           </nav>
 
-          {/* Connect Wallet Button */}
-          <div className="hidden md:block">
-            <CustomWalletButton className="bg-gray-900 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors border-none" />
+          {/* Follow Us and Connect Wallet Buttons */}
+          <div className="hidden md:flex items-center space-x-3">
+            <a
+              href="https://x.com/thebonkstrategy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-gray-100 text-gray-700 px-4 py-2 rounded-full text-sm font-medium hover:bg-orange-500 hover:text-white transition-colors"
+            >
+              Follow Us
+            </a>
+            <CustomWalletButton className="bg-gray-900 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-orange-500 transition-colors border-none" />
           </div>
 
           {/* Mobile Menu Button */}
@@ -64,8 +72,16 @@ export const Header = () => {
               <a href="#voting" className="block px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors">Voting</a>
               <a href="#pitch" className="block px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors">Pitch Deck</a>
               <a href="#how" className="block px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors">How it Works</a>
-              <div className="px-3 py-2">
-                <CustomWalletButton className="bg-gray-900 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-800 transition-colors border-none w-full" />
+              <div className="px-3 py-2 space-y-2">
+                <a
+                  href="https://x.com/thebonkstrategy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block bg-gray-100 text-gray-700 px-3 py-2 rounded-md text-sm font-medium hover:bg-orange-500 hover:text-white transition-colors text-center"
+                >
+                  Follow Us
+                </a>
+                <CustomWalletButton className="bg-gray-900 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-orange-500 transition-colors border-none w-full" />
               </div>
             </div>
           </div>

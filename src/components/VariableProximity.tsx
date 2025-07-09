@@ -133,20 +133,22 @@ const VariableProximity = forwardRef<HTMLSpanElement, VariableProximityProps>((p
       );
 
       if (distance >= radius) {
-        letterRef.style.fontVariationSettings = fromFontVariationSettings;
+        letterRef.style.fontWeight = '400';
+        letterRef.style.transform = 'scale(1)';
+        letterRef.style.color = 'inherit';
         return;
       }
 
       const falloffValue = calculateFalloff(distance);
-      const newSettings = parsedSettings
-        .map(({ axis, fromValue, toValue }) => {
-          const interpolatedValue = fromValue + (toValue - fromValue) * falloffValue;
-          return `'${axis}' ${interpolatedValue}`;
-        })
-        .join(", ");
-
-      interpolatedSettingsRef.current[index] = newSettings;
-      letterRef.style.fontVariationSettings = newSettings;
+      const fontWeight = 400 + (500 * falloffValue);
+      const scale = 1 + (0.2 * falloffValue);
+      const opacity = 0.7 + (0.3 * falloffValue);
+      
+      letterRef.style.fontWeight = fontWeight.toString();
+      letterRef.style.transform = `scale(${scale})`;
+      letterRef.style.opacity = opacity.toString();
+      letterRef.style.color = `rgb(${Math.floor(255 - (100 * falloffValue))}, ${Math.floor(140 - (60 * falloffValue))}, 0)`;
+      letterRef.style.transition = 'all 0.1s ease-out';
     });
   });
 
@@ -159,7 +161,7 @@ const VariableProximity = forwardRef<HTMLSpanElement, VariableProximityProps>((p
       onClick={onClick}
       style={{
         display: "inline",
-        fontFamily: '"Roboto Flex", sans-serif',
+        fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
         ...style,
       }}
       className={className}

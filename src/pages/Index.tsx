@@ -83,30 +83,33 @@ const Index = () => {
                     <div className="text-sm text-black leading-relaxed">
                       <VariableProximity
                         label="This platform operates a unique token redistribution system designed to reward top BSTR token holders. Holders who maintain 0.5% or more of the total BSTR supply qualify for our redistribution program. These qualifying holders will receive proportional distributions of the four tokens we actively track and monitor in the charts displayed on the left: BONK, Hosico, USELESS, and IKUN."
-                        className="block mb-3"
-                        fromFontVariationSettings="'wght' 400"
-                        toFontVariationSettings="'wght' 800"
+                        className="block mb-3 transition-all duration-200"
+                        fromFontVariationSettings="'wght' 300"
+                        toFontVariationSettings="'wght' 900"
                         containerRef={containerRef}
-                        radius={100}
+                        radius={150}
                         falloff="linear"
+                        style={{ fontWeight: 400 }}
                       />
                       <VariableProximity
                         label="The redistribution occurs based on real-time price movements and trading volumes of these four tokens. Our advanced averaging algorithm continuously monitors market conditions to ensure fair and timely distribution to eligible BSTR holders. By holding a significant stake in BSTR, you gain exposure to a diversified portfolio of promising tokens while benefiting from community-driven governance and transparent distribution mechanisms."
-                        className="block mb-3"
-                        fromFontVariationSettings="'wght' 400"
-                        toFontVariationSettings="'wght' 800"
+                        className="block mb-3 transition-all duration-200"
+                        fromFontVariationSettings="'wght' 300"
+                        toFontVariationSettings="'wght' 900"
                         containerRef={containerRef}
-                        radius={100}
+                        radius={150}
                         falloff="linear"
+                        style={{ fontWeight: 400 }}
                       />
                       <VariableProximity
                         label="Vote for new tokens to be added to the redistribution pool using the voting panel below. Your voice matters in shaping the future of our token ecosystem and determining which assets deserve inclusion in our carefully curated redistribution strategy."
-                        className="block"
-                        fromFontVariationSettings="'wght' 400"
-                        toFontVariationSettings="'wght' 800"
+                        className="block transition-all duration-200"
+                        fromFontVariationSettings="'wght' 300"
+                        toFontVariationSettings="'wght' 900"
                         containerRef={containerRef}
-                        radius={100}
+                        radius={150}
                         falloff="linear"
+                        style={{ fontWeight: 400 }}
                       />
                     </div>
                   </div>

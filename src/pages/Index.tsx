@@ -4,8 +4,7 @@ import TokenDistributionChart from '../components/TokenDistributionChart';
 import PerformanceChart from '../components/PerformanceChart';
 import VolumeChart from '../components/VolumeChart';
 import InteractiveChart from '../components/InteractiveChart';
-import LiveWebSocketChart from '../components/LiveWebSocketChart';
-import SimpleWebSocketTest from '../components/SimpleWebSocketTest';
+import BasicWebSocketChart from '../components/BasicWebSocketChart';
 import VotingPanel from '../components/VotingPanel';
 import PitchDeck from '../components/PitchDeck';
 import HowItWorks from '../components/HowItWorks';
@@ -40,14 +39,10 @@ const Index = () => {
                   <InteractiveChart />
                 </div>
                 
-                {/* WebSocket Test */}
+                {/* Basic WebSocket Chart */}
                 <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
-                  <SimpleWebSocketTest />
-                </div>
-                
-                {/* Live WebSocket Chart */}
-                <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
-                  <LiveWebSocketChart />
+                  <h3 className="text-lg font-black text-gray-900 mb-4">Live WebSocket Chart</h3>
+                  <BasicWebSocketChart />
                 </div>
               </div>
               

@@ -12,8 +12,19 @@ import { useWallet } from '@solana/wallet-adapter-react';
 
 type VotableToken = Database['public']['Tables']['votable_tokens']['Row'];
 
+interface TokenStats {
+  '24h': {
+    priceChangePercentage: number;
+    volume: {
+      total: number;
+    };
+    transactions: number;
+  };
+}
+
 interface VotingItem extends VotableToken {
   userVoted?: boolean;
+  stats?: TokenStats;
 }
 
 const VotingPanel = () => {
@@ -26,6 +37,34 @@ const VotingPanel = () => {
   
   const VOTE_GOAL = 25;
   const SOLANA_TRACKER_API_KEY = 'ab5915df-4f94-449a-96c5-c37cbc92ef47';
+
+  // Fetch token stats from Solana Tracker API
+  const fetchTokenStats = async (contractAddress: string): Promise<TokenStats | null> => {
+    try {
+      console.log(`📊 Fetching token stats for: ${contractAddress}`);
+      
+      const response = await fetch(
+        `https://data.solanatracker.io/stats/${contractAddress}`,
+        {
+          headers: {
+            'x-api-key': SOLANA_TRACKER_API_KEY,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        console.log(`❌ Stats API Error for ${contractAddress}: ${response.status}`);
+        return null;
+      }
+
+      const stats = await response.json();
+      console.log(`✅ Fetched stats for ${contractAddress}:`, stats);
+      return stats;
+    } catch (err) {
+      console.error(`💥 Error fetching stats for ${contractAddress}:`, err);
+      return null;
+    }
+  };
 
   // Fetch token metadata from Solana Tracker API
   const fetchTokenMetadata = async (contractAddress: string): Promise<{name: string, symbol: string, image?: string} | null> => {
@@ -68,12 +107,15 @@ const VotingPanel = () => {
     }
   };
 
-  // Enhance tokens with fresh metadata
+  // Enhance tokens with fresh metadata and stats
   const enhanceTokensWithMetadata = async (tokens: VotableToken[]): Promise<VotingItem[]> => {
     const enhancedTokens = await Promise.all(
       tokens.map(async (token) => {
-        // Try to fetch fresh metadata from API
-        const apiMetadata = await fetchTokenMetadata(token.contract_address);
+        // Try to fetch fresh metadata and stats from API
+        const [apiMetadata, stats] = await Promise.all([
+          fetchTokenMetadata(token.contract_address),
+          fetchTokenStats(token.contract_address)
+        ]);
         
         if (apiMetadata) {
           // Use API metadata if available
@@ -81,7 +123,8 @@ const VotingPanel = () => {
             ...token,
             name: apiMetadata.name,
             symbol: apiMetadata.symbol,
-            image: apiMetadata.image || token.image_url
+            image: apiMetadata.image || token.image_url,
+            stats
           };
         }
         
@@ -89,7 +132,8 @@ const VotingPanel = () => {
         return {
           ...token,
           symbol: token.ticker, // Map ticker to symbol
-          image: token.image_url // Map image_url to image
+          image: token.image_url, // Map image_url to image
+          stats
         };
       })
     );
@@ -291,7 +335,7 @@ const VotingPanel = () => {
               }));
               setVotingItems(tokensWithVoteStatus);
             }}
-            className="text-xs text-blue-600 hover:text-blue-800 underline"
+            className="text-xs text-orange-600 hover:text-orange-800 underline"
           >
             Refresh
           </button>
@@ -341,6 +385,39 @@ const VotingPanel = () => {
                 )}
               </div>
             </div>
+            
+            {/* Performance Stats */}
+            {item.stats && item.stats['24h'] && (
+              <div className="mb-3 p-3 bg-gray-50 rounded-lg">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-medium text-gray-600">24h Performance</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <div className="text-gray-500">Price Change</div>
+                    <div className={`font-bold ${
+                      item.stats['24h'].priceChangePercentage > 0 ? 'text-green-600' : 
+                      item.stats['24h'].priceChangePercentage < 0 ? 'text-red-600' : 'text-gray-600'
+                    }`}>
+                      {item.stats['24h'].priceChangePercentage > 0 ? '+' : ''}
+                      {item.stats['24h'].priceChangePercentage.toFixed(2)}%
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">Volume</div>
+                    <div className="font-medium text-gray-900">
+                      ${(item.stats['24h'].volume.total / 1000).toFixed(1)}k
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">Transactions</div>
+                    <div className="font-medium text-gray-900">
+                      {item.stats['24h'].transactions}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             
             <div className="mb-4">
               <div className="flex justify-between items-center mb-2">

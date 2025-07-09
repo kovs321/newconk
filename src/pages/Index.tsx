@@ -98,16 +98,6 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Voting Panel */}
-        <section id="voting" className="py-12 px-4 bg-gray-50">
-          <div className="container mx-auto max-w-4xl">
-            <div className="bg-white rounded-lg p-8 shadow-sm">
-              <h3 className="text-2xl font-black text-gray-900 mb-6">Vote for New Tokens</h3>
-              <VotingPanel />
-            </div>
-          </div>
-        </section>
-
         {/* Pitch Deck Section */}
         <section id="pitch" className="py-12 px-4">
           <div className="container mx-auto max-w-6xl">
@@ -121,11 +111,21 @@ const Index = () => {
         {/* Scroll Velocity Section */}
         <section className="py-16 bg-orange-500">
           <ScrollVelocity
-            texts={['BONK STRATEGY', 'TOKEN REWARDS', 'COMMUNITY POWER', 'DISTRIBUTION']}
+            texts={['BONK STRATEGY', 'TOKEN REWARDS']}
             velocity={100}
             className="text-white font-black"
             numCopies={8}
           />
+        </section>
+
+        {/* Voting Panel */}
+        <section id="voting" className="py-12 px-4 bg-gray-50">
+          <div className="container mx-auto max-w-4xl">
+            <div className="bg-white rounded-lg p-8 shadow-sm">
+              <h3 className="text-2xl font-black text-gray-900 mb-6">Vote for New Tokens</h3>
+              <VotingPanel />
+            </div>
+          </div>
         </section>
 
         {/* How It Works */}

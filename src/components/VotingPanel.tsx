@@ -344,7 +344,7 @@ const VotingPanel = () => {
 
       {/* Voting Items */}
       {votingItems.map((item) => {
-        const percentage = (item.votes / VOTE_GOAL) * 100;
+        const percentage = ((item.votes || 0) / VOTE_GOAL) * 100;
         const isVoting = votingStates[item.id];
         const isGoalReached = item.votes >= VOTE_GOAL;
         
@@ -387,7 +387,7 @@ const VotingPanel = () => {
             </div>
             
             {/* Performance Stats */}
-            {item.stats && item.stats['24h'] && (
+            {item.stats && item.stats['24h'] && item.stats['24h'].priceChangePercentage !== undefined && (
               <div className="mb-3 p-3 bg-gray-50 rounded-lg">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-xs font-medium text-gray-600">24h Performance</span>
@@ -396,23 +396,23 @@ const VotingPanel = () => {
                   <div>
                     <div className="text-gray-500">Price Change</div>
                     <div className={`font-bold ${
-                      item.stats['24h'].priceChangePercentage > 0 ? 'text-green-600' : 
-                      item.stats['24h'].priceChangePercentage < 0 ? 'text-red-600' : 'text-gray-600'
+                      item.stats['24h'].priceChangePercentage != null && item.stats['24h'].priceChangePercentage > 0 ? 'text-green-600' : 
+                      item.stats['24h'].priceChangePercentage != null && item.stats['24h'].priceChangePercentage < 0 ? 'text-red-600' : 'text-gray-600'
                     }`}>
-                      {item.stats['24h'].priceChangePercentage > 0 ? '+' : ''}
-                      {item.stats['24h'].priceChangePercentage.toFixed(2)}%
+                      {item.stats['24h'].priceChangePercentage != null && item.stats['24h'].priceChangePercentage > 0 ? '+' : ''}
+                      {item.stats['24h'].priceChangePercentage != null ? item.stats['24h'].priceChangePercentage.toFixed(2) : '0.00'}%
                     </div>
                   </div>
                   <div>
                     <div className="text-gray-500">Volume</div>
                     <div className="font-medium text-gray-900">
-                      ${(item.stats['24h'].volume.total / 1000).toFixed(1)}k
+                      ${item.stats['24h'].volume?.total != null ? (item.stats['24h'].volume.total / 1000).toFixed(1) : '0.0'}k
                     </div>
                   </div>
                   <div>
                     <div className="text-gray-500">Transactions</div>
                     <div className="font-medium text-gray-900">
-                      {item.stats['24h'].transactions}
+                      {item.stats['24h'].transactions || 0}
                     </div>
                   </div>
                 </div>
@@ -422,7 +422,7 @@ const VotingPanel = () => {
             <div className="mb-4">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-medium text-gray-700">Progress to Goal</span>
-                <span className="text-sm font-medium text-gray-700">{Math.min(percentage, 100).toFixed(1)}%</span>
+                <span className="text-sm font-medium text-gray-700">{Math.min(percentage || 0, 100).toFixed(1)}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 

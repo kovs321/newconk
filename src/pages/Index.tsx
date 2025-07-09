@@ -11,6 +11,7 @@ import HowItWorks from '../components/HowItWorks';
 import { Header } from '../components/Header';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import RotatingText from '../components/RotatingText';
+import ScrollVelocity from '../components/ScrollVelocity';
 
 const Index = () => {
   return (
@@ -115,6 +116,16 @@ const Index = () => {
               <PitchDeck />
             </div>
           </div>
+        </section>
+
+        {/* Scroll Velocity Section */}
+        <section className="py-16 bg-orange-500">
+          <ScrollVelocity
+            texts={['BONK STRATEGY', 'TOKEN REWARDS', 'COMMUNITY POWER', 'DISTRIBUTION']}
+            velocity={100}
+            className="text-white font-black"
+            numCopies={8}
+          />
         </section>
 
         {/* How It Works */}

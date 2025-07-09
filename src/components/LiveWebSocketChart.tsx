@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { createChart, HistogramSeries, IChartApi, ISeriesApi } from 'lightweight-charts';
+import { createChart, LineSeries, IChartApi, ISeriesApi } from 'lightweight-charts';
+import { Datastream } from '@solana-tracker/data-api';
 
 interface PriceData {
   time: number;
@@ -9,10 +10,9 @@ interface PriceData {
 const LiveWebSocketChart: React.FC = () => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const seriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const reconnectAttempts = useRef<number>(0);
+  const seriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+  const datastreamRef = useRef<Datastream | null>(null);
+  const subscriptionRef = useRef<any>(null);
   
   const [data, setData] = useState<PriceData[]>([]);
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
@@ -20,18 +20,14 @@ const LiveWebSocketChart: React.FC = () => {
   const [wsStatus, setWsStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
   const [error, setError] = useState<string | null>(null);
 
-  const TOKEN_MINT = 'So11111111111111111111111111111111111111111';
-  const SOLANA_TRACKER_WS_URL = 'wss://datastream.solanatracker.io/d4fc0684-2e18-4de4-abab-cbe984738ea7';
-  
-  const reconnectDelay = 2500;
-  const reconnectDelayMax = 4500;
-  const randomizationFactor = 0.5;
+  const TOKEN_MINT = 'So11111111111111111111111111111111111111111'; // SOL
+  const DATASTREAM_URL = 'wss://datastream.solanatracker.io/d4fc0684-2e18-4de4-abab-cbe984738ea7';
 
   // Initialize chart
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
-    console.log('Initializing live WebSocket chart...');
+    console.log('Initializing live WebSocket chart with LineSeries...');
     
     try {
       const chart = createChart(chartContainerRef.current, {
@@ -69,27 +65,28 @@ const LiveWebSocketChart: React.FC = () => {
         },
       });
       
-      const histogramSeries = chart.addSeries(HistogramSeries, { 
-        color: '#26a69a',
+      const lineSeries = chart.addSeries(LineSeries, { 
+        color: '#2962FF',
+        lineWidth: 2,
         priceFormat: {
           type: 'price',
-          precision: 8,
-          minMove: 0.00000001,
+          precision: 6,
+          minMove: 0.000001,
         },
         priceLineVisible: true,
         lastValueVisible: true,
-        title: 'Live Price',
+        title: 'SOL Live Price',
       });
 
       chartRef.current = chart;
-      seriesRef.current = histogramSeries;
+      seriesRef.current = lineSeries;
 
       // Initialize with existing data if any
       if (data.length > 0) {
-        histogramSeries.setData(data);
+        lineSeries.setData(data);
       }
 
-      console.log('Live heatmap chart initialized successfully');
+      console.log('Live line chart initialized successfully');
 
       // Handle resize
       const handleResize = () => {
@@ -117,158 +114,133 @@ const LiveWebSocketChart: React.FC = () => {
     }
   }, []);
 
-  // WebSocket connection management
-  const connectWebSocket = () => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      return;
-    }
-
-    console.log('Connecting to Solana Tracker WebSocket for live updates...');
-    setWsStatus('connecting');
-
-    const ws = new WebSocket(SOLANA_TRACKER_WS_URL);
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      console.log('WebSocket connected for live updates');
-      setWsStatus('connected');
-      setError(null);
-      reconnectAttempts.current = 0;
-      subscribeToPriceUpdates();
-    };
-
-    ws.onmessage = (event) => {
+  // Initialize Datastream and connect
+  useEffect(() => {
+    const initializeDatastream = async () => {
       try {
-        const message = JSON.parse(event.data);
-        handleWebSocketMessage(message);
-      } catch (error) {
-        console.error('Error parsing WebSocket message:', error);
-      }
-    };
+        console.log('Initializing Datastream connection...');
+        setWsStatus('connecting');
 
-    ws.onclose = () => {
-      console.log('WebSocket disconnected');
-      setWsStatus('disconnected');
-      wsRef.current = null;
-      reconnectWebSocket();
-    };
-
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      setWsStatus('disconnected');
-      setError('WebSocket connection failed');
-    };
-  };
-
-  const reconnectWebSocket = () => {
-    console.log('Reconnecting to WebSocket server');
-    const delay = Math.min(
-      reconnectDelay * Math.pow(2, reconnectAttempts.current),
-      reconnectDelayMax
-    );
-    const jitter = delay * randomizationFactor;
-    const reconnectDelayCalculated = delay + Math.random() * jitter;
-
-    reconnectTimeoutRef.current = setTimeout(() => {
-      reconnectAttempts.current++;
-      connectWebSocket();
-    }, reconnectDelayCalculated);
-  };
-
-  const subscribeToPriceUpdates = () => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      return;
-    }
-
-    const priceSubscription = {
-      type: 'join',
-      room: `price:${TOKEN_MINT}`
-    };
-
-    wsRef.current.send(JSON.stringify(priceSubscription));
-    console.log(`Subscribed to live price updates for token: ${TOKEN_MINT}`);
-  };
-
-  const handleWebSocketMessage = (message: any) => {
-    if (message.type === 'message') {
-      if (message.room === `price:${TOKEN_MINT}`) {
-        const priceData = message.data;
-        console.log('Live price update received:', priceData);
-        
-        const newPoint: PriceData = {
-          time: Math.floor(priceData.time / 1000),
-          value: priceData.price
-        };
-
-        // Update current price with direction
-        setCurrentPrice(prevPrice => {
-          if (prevPrice !== null) {
-            setPriceDirection(priceData.price > prevPrice ? 'up' : 'down');
-            setTimeout(() => setPriceDirection(null), 1000);
-          }
-          return priceData.price;
+        // Initialize Datastream
+        const datastream = new Datastream({
+          wsUrl: DATASTREAM_URL
         });
 
-        // Add to chart data
-        setData(prevData => {
-          const newData = [...prevData, newPoint];
-          
-          // Keep only last 1000 points for performance
-          if (newData.length > 1000) {
-            newData.splice(0, newData.length - 1000);
-          }
-          
-          return newData;
+        datastreamRef.current = datastream;
+
+        // Setup connection event listeners
+        datastream.on('connected', () => {
+          console.log('Datastream connected successfully');
+          setWsStatus('connected');
+          setError(null);
         });
 
-        // Update chart
-        if (seriesRef.current) {
-          seriesRef.current.update(newPoint);
+        datastream.on('disconnected', (socketType) => {
+          console.log(`Datastream disconnected: ${socketType}`);
+          setWsStatus('disconnected');
+        });
+
+        datastream.on('reconnecting', (attempt) => {
+          console.log(`Datastream reconnecting: attempt ${attempt}`);
+          setWsStatus('connecting');
+        });
+
+        datastream.on('error', (error) => {
+          console.error('Datastream error:', error);
+          setError('WebSocket connection failed');
+          setWsStatus('disconnected');
+        });
+
+        // Connect to the WebSocket server
+        await datastream.connect();
+
+        // Subscribe to price updates for SOL token
+        console.log(`Subscribing to price updates for token: ${TOKEN_MINT}`);
+        const priceSubscription = datastream.subscribe.price.allPoolsForToken(TOKEN_MINT).on((priceData) => {
+          console.log('Live price update received:', priceData);
           
-          // Auto-scroll to keep latest data visible
-          if (chartRef.current) {
-            const timeScale = chartRef.current.timeScale();
-            const logicalRange = timeScale.getVisibleLogicalRange();
+          const newPoint: PriceData = {
+            time: Math.floor(priceData.time / 1000), // Convert to seconds
+            value: priceData.price
+          };
+
+          // Update current price with direction
+          setCurrentPrice(prevPrice => {
+            if (prevPrice !== null) {
+              setPriceDirection(priceData.price > prevPrice ? 'up' : 'down');
+              setTimeout(() => setPriceDirection(null), 1000);
+            }
+            return priceData.price;
+          });
+
+          // Add to chart data
+          setData(prevData => {
+            const newData = [...prevData, newPoint];
             
-            // If we're close to the right edge, scroll to show new data
-            if (logicalRange && logicalRange.to > data.length - 10) {
-              timeScale.scrollToRealTime();
+            // Keep only last 1000 points for performance
+            if (newData.length > 1000) {
+              newData.splice(0, newData.length - 1000);
+            }
+            
+            return newData;
+          });
+
+          // Update chart
+          if (seriesRef.current) {
+            seriesRef.current.update(newPoint);
+            
+            // Auto-scroll to keep latest data visible
+            if (chartRef.current) {
+              const timeScale = chartRef.current.timeScale();
+              const logicalRange = timeScale.getVisibleLogicalRange();
+              
+              // If we're close to the right edge, scroll to show new data
+              if (logicalRange && logicalRange.to > data.length - 10) {
+                timeScale.scrollToRealTime();
+              }
             }
           }
-        }
+        });
+
+        subscriptionRef.current = priceSubscription;
+
+      } catch (error) {
+        console.error('Error initializing Datastream:', error);
+        setError('Failed to initialize WebSocket connection');
+        setWsStatus('disconnected');
       }
-    }
-  };
+    };
 
-  const disconnectWebSocket = () => {
-    if (wsRef.current) {
-      const leaveSubscription = {
-        type: 'leave',
-        room: `price:${TOKEN_MINT}`
-      };
-      wsRef.current.send(JSON.stringify(leaveSubscription));
-      
-      wsRef.current.close();
-      wsRef.current = null;
-    }
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-  };
+    initializeDatastream();
 
-  // Connect on mount
-  useEffect(() => {
-    connectWebSocket();
-    
     return () => {
-      disconnectWebSocket();
+      // Cleanup on unmount
+      if (subscriptionRef.current) {
+        subscriptionRef.current.unsubscribe();
+        subscriptionRef.current = null;
+      }
+      if (datastreamRef.current) {
+        datastreamRef.current.disconnect();
+        datastreamRef.current = null;
+      }
     };
   }, []);
 
   const formatPrice = (price: number | null) => {
     if (price === null) return '--';
-    return price.toFixed(8);
+    return price.toFixed(6);
+  };
+
+  const reconnect = async () => {
+    if (datastreamRef.current) {
+      try {
+        setWsStatus('connecting');
+        await datastreamRef.current.connect();
+      } catch (error) {
+        console.error('Reconnection failed:', error);
+        setError('Reconnection failed');
+      }
+    }
   };
 
   return (
@@ -278,7 +250,7 @@ const LiveWebSocketChart: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-black text-gray-900">Live WebSocket Chart</h3>
-            <p className="text-sm text-gray-600">Real-time price updates only</p>
+            <p className="text-sm text-gray-600">Real-time SOL price via Solana Tracker SDK</p>
           </div>
           <div className="flex items-center space-x-6">
             <div className="text-right">
@@ -307,6 +279,14 @@ const LiveWebSocketChart: React.FC = () => {
                 {wsStatus === 'connected' ? 'Live' : 
                  wsStatus === 'connecting' ? 'Connecting' : 'Disconnected'}
               </span>
+              {wsStatus === 'disconnected' && (
+                <button
+                  onClick={reconnect}
+                  className="ml-2 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                  Reconnect
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -327,7 +307,7 @@ const LiveWebSocketChart: React.FC = () => {
       {/* Footer */}
       <div className="px-4 pb-4">
         <div className="text-xs text-gray-500 text-center">
-          Live updates via Solana Tracker WebSocket • {data.length} data points
+          Live updates via Solana Tracker SDK • {data.length} data points
         </div>
       </div>
     </div>

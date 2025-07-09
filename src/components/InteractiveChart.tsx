@@ -177,10 +177,11 @@ const InteractiveChart: React.FC = () => {
   // Initialize chart on mount
   useEffect(() => {
     if (!chartContainerRef.current) {
+      console.log('Chart container ref not available');
       return;
     }
 
-    console.log('Initializing chart...');
+    console.log('Initializing chart...', chartContainerRef.current);
     
     try {
       const chart = createChart(chartContainerRef.current, {
@@ -232,7 +233,7 @@ const InteractiveChart: React.FC = () => {
       chartRef.current = chart;
       seriesRef.current = areaSeries;
 
-      console.log('Chart initialized successfully');
+      console.log('Chart initialized successfully', { chart, areaSeries });
 
       // Handle resize
       const handleResize = () => {
@@ -262,14 +263,17 @@ const InteractiveChart: React.FC = () => {
 
   // Update chart when data changes
   useEffect(() => {
+    console.log('Data changed:', data.length, 'points');
     if (seriesRef.current && data.length > 0) {
+      console.log('Setting data to series:', data.slice(-3)); // Show last 3 points
       seriesRef.current.setData(data);
       
-      // Only set initial zoom on first data load
-      if (chartRef.current && !chartRef.current.timeScale().getVisibleRange()) {
+      // Always set zoom range to ensure chart is visible
+      if (chartRef.current) {
         const lastTime = data[data.length - 1].time;
         const sixHoursAgo = lastTime - (6 * 60 * 60);
         
+        console.log('Setting zoom range:', { from: sixHoursAgo, to: lastTime + (30 * 60) });
         chartRef.current.timeScale().setVisibleRange({
           from: sixHoursAgo,
           to: lastTime + (30 * 60)
@@ -374,7 +378,7 @@ const InteractiveChart: React.FC = () => {
 
       {/* Chart Container */}
       <div className="p-4">
-        <div ref={chartContainerRef} className="w-full h-96 border border-gray-200 rounded-lg" />
+        <div ref={chartContainerRef} className="w-full h-96 border border-gray-200 rounded-lg bg-white" />
       </div>
 
       {/* Footer */}

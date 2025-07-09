@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { CustomWalletButton } from './CustomWalletButton';
+import { BonkStrategyLogo } from './BonkStrategyLogo';
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -23,7 +24,7 @@ export const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <h1 className="text-xl font-black text-gray-900">BONK STRATEGY</h1>
+            <BonkStrategyLogo className="h-10 w-auto" />
           </div>
 
           {/* Desktop Navigation */}

@@ -55,9 +55,9 @@ const Index = () => {
                   <InteractiveChart />
                 </div>
                 
-                {/* Basic WebSocket Chart */}
+                {/* BSTR Chart */}
                 <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
-                  <h3 className="text-lg font-black text-gray-900 mb-4">Live WebSocket Chart</h3>
+                  <h3 className="text-lg font-black text-gray-900 mb-4">BSTR Chart</h3>
                   <BasicWebSocketChart />
                 </div>
               </div>

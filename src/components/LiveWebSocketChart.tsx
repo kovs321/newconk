@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { createChart, IChartApi, ISeriesApi, Time } from 'lightweight-charts';
-import { HeatMapSeries, HeatMapData, HeatMapSeriesOptions } from './HeatMapSeries';
+import { createChart, IChartApi, ISeriesApi, Time, AreaSeries } from 'lightweight-charts';
+// import { HeatMapSeries, HeatMapData, HeatMapSeriesOptions } from './HeatMapSeries';
 
 interface PriceData {
   time: number;
@@ -16,10 +16,16 @@ interface HeatMapBucket {
   averagePrice: number;
 }
 
+interface HeatMapData {
+  time: Time;
+  value: number;
+  amount: number;
+}
+
 const LiveWebSocketChart: React.FC = () => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const seriesRef = useRef<ISeriesApi<'Custom'> | null>(null);
+  const seriesRef = useRef<ISeriesApi<'Area'> | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttempts = useRef<number>(0);
@@ -118,19 +124,26 @@ const LiveWebSocketChart: React.FC = () => {
         },
       });
       
-      const heatmapSeriesView = new HeatMapSeries();
-      const heatmapSeries = chart.addCustomSeries(heatmapSeriesView, {
-        cellShader,
-        cellWidth: 24,
-        cellHeight: 15,
-      } as HeatMapSeriesOptions);
+      const areaSeries = chart.addSeries(AreaSeries, {
+        lineColor: '#2962FF',
+        topColor: '#2962FF',
+        bottomColor: 'rgba(41, 98, 255, 0.28)',
+        priceFormat: {
+          type: 'price',
+          precision: 8,
+          minMove: 0.00000001,
+        },
+        priceLineVisible: true,
+        lastValueVisible: true,
+        title: 'Live Price Movement',
+      });
 
       chartRef.current = chart;
-      seriesRef.current = heatmapSeries;
+      seriesRef.current = areaSeries;
 
-      // Initialize heatmap with existing data if any
-      if (heatmapData.length > 0) {
-        heatmapSeries.setData(heatmapData);
+      // Initialize with existing data if any
+      if (data.length > 0) {
+        areaSeries.setData(data);
       }
 
       console.log('Live heatmap chart initialized successfully');
@@ -292,9 +305,17 @@ const LiveWebSocketChart: React.FC = () => {
                   newHeatmap.splice(0, newHeatmap.length - 200);
                 }
                 
-                // Update chart with the entire dataset
+                // Update chart with the new point
                 if (seriesRef.current) {
-                  seriesRef.current.setData(newHeatmap);
+                  try {
+                    const chartPoint = {
+                      time: heatmapPoint.time,
+                      value: heatmapPoint.value
+                    };
+                    seriesRef.current.update(chartPoint);
+                  } catch (error) {
+                    console.error('Error updating chart:', error);
+                  }
                 }
                 
                 return newHeatmap;
@@ -377,8 +398,8 @@ const LiveWebSocketChart: React.FC = () => {
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-black text-gray-900">Live Price Heatmap</h3>
-            <p className="text-sm text-gray-600">Price movement intensity visualization</p>
+            <h3 className="text-lg font-black text-gray-900">Live Price Movement</h3>
+            <p className="text-sm text-gray-600">Real-time price buckets with intensity tracking</p>
           </div>
           <div className="flex items-center space-x-6">
             <div className="text-right">
@@ -440,7 +461,7 @@ const LiveWebSocketChart: React.FC = () => {
       {/* Footer */}
       <div className="px-4 pb-4">
         <div className="text-xs text-gray-500 text-center">
-          Live heatmap via WebSocket • {heatmapData.length} buckets • 30s intervals
+          Live price movement via WebSocket • {heatmapData.length} buckets • 30s intervals
         </div>
         <div className="mt-2 flex justify-center items-center space-x-4">
           <div className="flex items-center space-x-2">

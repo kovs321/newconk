@@ -20,7 +20,7 @@ const BasicWebSocketChart: React.FC = () => {
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
 
-  const TOKEN_MINT = 'So11111111111111111111111111111111111111112'; // SOL
+  const TOKEN_MINT = 'GJU3bXxNkNtYxgjkoFhAdq7VrXJAB2GW4Cpt6kLcbonk'; // Custom token
   const WS_URL = 'wss://datastream.solanatracker.io/d4fc0684-2e18-4de4-abab-cbe984738ea7';
 
   const addLog = (message: string) => {
@@ -182,14 +182,6 @@ const BasicWebSocketChart: React.FC = () => {
       {/* Chart */}
       <div ref={chartContainerRef} className="w-full h-60 border border-gray-200 rounded" />
 
-      {/* Logs */}
-      <div className="bg-black text-green-400 p-3 rounded font-mono text-xs space-y-1 max-h-48 overflow-y-auto">
-        <div className="text-white font-bold mb-2">WebSocket Debug Log:</div>
-        {logs.map((log, index) => (
-          <div key={index}>{log}</div>
-        ))}
-        {logs.length === 0 && <div className="text-gray-500">Initializing...</div>}
-      </div>
     </div>
   );
 };

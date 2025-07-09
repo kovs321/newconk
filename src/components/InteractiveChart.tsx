@@ -10,6 +10,7 @@ interface TokenInfo {
   mint: string;
   name: string;
   symbol: string;
+  logo?: string;
   currentPrice: number | null;
   priceDirection: 'up' | 'down' | null;
   status: 'active' | 'error' | 'loading';
@@ -39,7 +40,7 @@ const InteractiveChart: React.FC = () => {
   const [tokens, setTokens] = useState<TokenInfo[]>([
     {
       mint: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263',
-      name: 'Token 1',
+      name: 'Loading...',
       symbol: 'TKN1',
       currentPrice: null,
       priceDirection: null,
@@ -47,7 +48,7 @@ const InteractiveChart: React.FC = () => {
     },
     {
       mint: '9wK8yN6iz1ie5kEJkvZCTxyN1x5sTdNfx8yeMY8Ebonk',
-      name: 'Token 2',
+      name: 'Loading...',
       symbol: 'TKN2',
       currentPrice: null,
       priceDirection: null,
@@ -55,7 +56,7 @@ const InteractiveChart: React.FC = () => {
     },
     {
       mint: 'Dz9mQ9NzkBcCsuGPFJ3r1bS4wgqKMHBPiVuniW8Mbonk',
-      name: 'Token 3',
+      name: 'Loading...',
       symbol: 'TKN3',
       currentPrice: null,
       priceDirection: null,
@@ -63,7 +64,7 @@ const InteractiveChart: React.FC = () => {
     },
     {
       mint: 'AtortPA9SVbkKmdzu5zg4jxgkR4howvPshorA9jYbonk',
-      name: 'Token 4',
+      name: 'Loading...',
       symbol: 'TKN4',
       currentPrice: null,
       priceDirection: null,
@@ -74,6 +75,52 @@ const InteractiveChart: React.FC = () => {
   const SOLANA_TRACKER_API_KEY = 'ab5915df-4f94-449a-96c5-c37cbc92ef47';
   
   const updateIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fetch token metadata from Solana Tracker API
+  const fetchTokenMetadata = async (tokenMint: string): Promise<{name: string, symbol: string, logo?: string} | null> => {
+    try {
+      console.log(`Fetching metadata for token: ${tokenMint}`);
+      const response = await fetch(
+        `https://api.solanatracker.io/tokens/${tokenMint}`,
+        {
+          headers: {
+            'x-api-key': SOLANA_TRACKER_API_KEY,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      return {
+        name: result.name || 'Unknown Token',
+        symbol: result.symbol || 'UNKNOWN',
+        logo: result.logo || result.image
+      };
+    } catch (err) {
+      console.error(`Error fetching metadata for token ${tokenMint}:`, err);
+      return null;
+    }
+  };
+
+  // Load token metadata for all tokens
+  const loadTokenMetadata = async () => {
+    const metadataPromises = tokens.map(async (token) => {
+      const metadata = await fetchTokenMetadata(token.mint);
+      return {
+        ...token,
+        name: metadata?.name || 'Unknown Token',
+        symbol: metadata?.symbol || 'UNKNOWN',
+        logo: metadata?.logo
+      };
+    });
+
+    const updatedTokens = await Promise.all(metadataPromises);
+    setTokens(updatedTokens);
+  };
   
   // Generate sample data
   const generateSampleData = (): ChartData[] => {
@@ -288,6 +335,10 @@ const InteractiveChart: React.FC = () => {
       setError(null);
 
       console.log('Loading initial chart data for 4 tokens...');
+      
+      // Load token metadata first
+      await loadTokenMetadata();
+      
       const tokenDataMap = await fetchMultiTokenData();
       
       // Calculate averaged data
@@ -560,13 +611,30 @@ const InteractiveChart: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {tokens.map((token, index) => (
             <div key={token.mint} className="flex items-center space-x-2">
-              <div className={`w-3 h-3 rounded-full ${
-                token.status === 'active' ? 'bg-green-500' :
-                token.status === 'error' ? 'bg-red-500' :
-                'bg-yellow-500 animate-pulse'
-              }`}></div>
+              <div className="flex items-center space-x-2">
+                {token.logo ? (
+                  <img 
+                    src={token.logo} 
+                    alt={token.symbol}
+                    className="w-6 h-6 rounded-full"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs font-bold text-gray-600">
+                    {token.symbol.charAt(0)}
+                  </div>
+                )}
+                <div className={`w-2 h-2 rounded-full ${
+                  token.status === 'active' ? 'bg-green-500' :
+                  token.status === 'error' ? 'bg-red-500' :
+                  'bg-yellow-500 animate-pulse'
+                }`}></div>
+              </div>
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-gray-900">{token.symbol}</div>
+                <div className="text-sm font-medium text-gray-900 truncate">{token.name}</div>
+                <div className="text-xs text-gray-500">{token.symbol}</div>
                 <div className={`text-xs font-mono transition-all duration-300 ${
                   token.currentPrice ? 
                     token.priceDirection === 'up' ? 'text-green-500 transform scale-110' :

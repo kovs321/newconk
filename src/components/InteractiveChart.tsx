@@ -178,17 +178,18 @@ const InteractiveChart: React.FC = () => {
           const latestData = await fetchTokenData(token.mint);
           
           if (latestData.length > 0) {
-            const latestPoint = latestData[latestData.length - 1];
             const previousPrice = token.currentPrice;
             
-            // Update chart series
-            const series = seriesRefs.current[token.mint];
-            if (series) {
-              series.update(latestPoint);
-            }
+            // Merge new data with existing data
+            const updatedData = [...token.data, ...latestData.filter(newPoint => 
+              !token.data.some(existingPoint => existingPoint.time === newPoint.time)
+            )].sort((a, b) => a.time - b.time);
+            
+            const latestPoint = updatedData[updatedData.length - 1];
             
             return {
               ...token,
+              data: updatedData,
               currentPrice: latestPoint.value,
               priceDirection: previousPrice ? 
                 (latestPoint.value > previousPrice ? 'up' : 'down') : null
@@ -216,13 +217,13 @@ const InteractiveChart: React.FC = () => {
     }
   };
 
-  // Initialize chart when tokens data is ready
+  // Initialize chart once when component mounts
   useEffect(() => {
-    if (!chartContainerRef.current || tokens.length === 0 || tokens.every(token => token.data.length === 0)) {
+    if (!chartContainerRef.current) {
       return;
     }
 
-    console.log('Initializing multi-token chart...');
+    console.log('Initializing chart...');
     
     try {
       const chart = createChart(chartContainerRef.current, {
@@ -259,51 +260,13 @@ const InteractiveChart: React.FC = () => {
         },
       });
       
-      // Create series for each token
+      // Don't create series here - let the data update effect handle it
       const newSeriesRefs: { [key: string]: ISeriesApi<'Area'> } = {};
-      
-      tokens.forEach((token) => {
-        if (token.data.length > 0) {
-          const areaSeries = chart.addSeries(AreaSeries, { 
-            lineColor: token.color, 
-            topColor: token.topColor, 
-            bottomColor: token.bottomColor,
-            priceFormat: {
-              type: 'price',
-              precision: 9,
-              minMove: 0.000000001,
-            },
-            priceLineVisible: false, // Hide individual price lines to avoid clutter
-            lastValueVisible: true,
-          });
-
-          // Set data for this token
-          const formattedData = token.data.map(item => ({
-            time: item.time,
-            value: Number(item.value)
-          }));
-          
-          areaSeries.setData(formattedData);
-          newSeriesRefs[token.mint] = areaSeries;
-        }
-      });
-      
-      // Set initial zoom to show last 6 hours
-      const allData = tokens.flatMap(token => token.data);
-      if (allData.length > 0) {
-        const lastTime = Math.max(...allData.map(item => item.time));
-        const sixHoursAgo = lastTime - (6 * 60 * 60);
-        
-        chart.timeScale().setVisibleRange({
-          from: sixHoursAgo,
-          to: lastTime + (30 * 60)
-        });
-      }
 
       chartRef.current = chart;
       seriesRefs.current = newSeriesRefs;
 
-      console.log('Multi-token chart initialized successfully');
+      console.log('Chart initialized successfully');
 
       // Handle resize
       const handleResize = () => {
@@ -328,6 +291,72 @@ const InteractiveChart: React.FC = () => {
     } catch (error) {
       console.error('Error initializing chart:', error);
       setError('Failed to initialize chart');
+    }
+  }, []); // Empty dependency array - initialize only once
+
+  // Update chart data when tokens change
+  useEffect(() => {
+    if (!chartRef.current || tokens.length === 0) {
+      return;
+    }
+
+    // Store current visible range before updating
+    const timeScale = chartRef.current.timeScale();
+    const currentRange = timeScale.getVisibleRange();
+
+    // Update existing series with new data
+    tokens.forEach((token) => {
+      const series = seriesRefs.current[token.mint];
+      
+      if (series && token.data.length > 0) {
+        // Update the entire dataset
+        const formattedData = token.data.map(item => ({
+          time: item.time,
+          value: Number(item.value)
+        }));
+        series.setData(formattedData);
+      } else if (!series && token.data.length > 0 && chartRef.current) {
+        // Create new series if it doesn't exist
+        const areaSeries = chartRef.current.addSeries(AreaSeries, { 
+          lineColor: token.color, 
+          topColor: token.topColor, 
+          bottomColor: token.bottomColor,
+          priceFormat: {
+            type: 'price',
+            precision: 9,
+            minMove: 0.000000001,
+          },
+          priceLineVisible: false,
+          lastValueVisible: true,
+        });
+
+        const formattedData = token.data.map(item => ({
+          time: item.time,
+          value: Number(item.value)
+        }));
+        
+        areaSeries.setData(formattedData);
+        seriesRefs.current[token.mint] = areaSeries;
+
+        // Set initial zoom for first data load
+        if (!currentRange) {
+          const allData = tokens.flatMap(token => token.data);
+          if (allData.length > 0) {
+            const lastTime = Math.max(...allData.map(item => item.time));
+            const sixHoursAgo = lastTime - (6 * 60 * 60);
+            
+            timeScale.setVisibleRange({
+              from: sixHoursAgo,
+              to: lastTime + (30 * 60)
+            });
+          }
+        }
+      }
+    });
+
+    // Restore visible range if it existed
+    if (currentRange) {
+      timeScale.setVisibleRange(currentRange);
     }
   }, [tokens]);
 

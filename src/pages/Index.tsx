@@ -5,6 +5,7 @@ import PerformanceChart from '../components/PerformanceChart';
 import VolumeChart from '../components/VolumeChart';
 import InteractiveChart from '../components/InteractiveChart';
 import LiveWebSocketChart from '../components/LiveWebSocketChart';
+import SimpleWebSocketTest from '../components/SimpleWebSocketTest';
 import VotingPanel from '../components/VotingPanel';
 import PitchDeck from '../components/PitchDeck';
 import HowItWorks from '../components/HowItWorks';
@@ -37,6 +38,11 @@ const Index = () => {
                 {/* Trading Chart */}
                 <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
                   <InteractiveChart />
+                </div>
+                
+                {/* WebSocket Test */}
+                <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
+                  <SimpleWebSocketTest />
                 </div>
                 
                 {/* Live WebSocket Chart */}

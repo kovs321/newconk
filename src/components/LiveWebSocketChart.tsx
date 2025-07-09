@@ -8,6 +8,8 @@ interface PriceData {
 }
 
 const LiveWebSocketChart: React.FC = () => {
+  // FORCE CACHE CLEAR - Version 2025-01-09-14:50
+  console.log('🔥 CACHE CLEARED - LiveWebSocketChart Version 2025-01-09-14:50 LOADED');
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<'Line'> | null>(null);

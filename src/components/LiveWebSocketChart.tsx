@@ -176,6 +176,7 @@ const LiveWebSocketChart: React.FC = () => {
     ws.onopen = () => {
       console.log('WebSocket connected for live updates');
       setWsStatus('connected');
+      setError(null);
       reconnectAttempts.current = 0;
       subscribeToPriceUpdates();
     };
@@ -199,6 +200,7 @@ const LiveWebSocketChart: React.FC = () => {
     ws.onerror = (error) => {
       console.error('WebSocket error:', error);
       setWsStatus('disconnected');
+      setError('WebSocket connection failed');
     };
   };
 
@@ -219,6 +221,7 @@ const LiveWebSocketChart: React.FC = () => {
 
   const subscribeToPriceUpdates = () => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      console.log('WebSocket not ready for subscription');
       return;
     }
 
@@ -227,11 +230,18 @@ const LiveWebSocketChart: React.FC = () => {
       room: `price:${TOKEN_MINT}`
     };
 
-    wsRef.current.send(JSON.stringify(priceSubscription));
-    console.log(`Subscribed to live price updates for token: ${TOKEN_MINT}`);
+    try {
+      wsRef.current.send(JSON.stringify(priceSubscription));
+      console.log(`Subscribed to live price updates for token: ${TOKEN_MINT}`);
+      console.log('Subscription message sent:', priceSubscription);
+    } catch (error) {
+      console.error('Error sending subscription:', error);
+      setError('Failed to subscribe to price updates');
+    }
   };
 
   const handleWebSocketMessage = (message: any) => {
+    console.log('WebSocket message received:', message);
     if (message.type === 'message') {
       if (message.room === `price:${TOKEN_MINT}`) {
         const priceData = message.data;
@@ -281,13 +291,14 @@ const LiveWebSocketChart: React.FC = () => {
                 if (newHeatmap.length > 200) {
                   newHeatmap.splice(0, newHeatmap.length - 200);
                 }
+                
+                // Update chart with the entire dataset
+                if (seriesRef.current) {
+                  seriesRef.current.setData(newHeatmap);
+                }
+                
                 return newHeatmap;
               });
-              
-              // Update chart with finalized bucket
-              if (seriesRef.current) {
-                seriesRef.current.update(heatmapPoint);
-              }
             }
             
             // Start new bucket

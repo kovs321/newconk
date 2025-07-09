@@ -27,48 +27,15 @@ const InteractiveChart: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // 4 different tokens with different colors
+  // Single token with blue color
   const [tokens, setTokens] = useState<TokenData[]>([
     {
       mint: 'Dz9mQ9NzkBcCsuGPFJ3r1bS4wgqKMHBPiVuniW8Mbonk',
-      name: 'BONK Token 1',
-      symbol: 'BONK1',
+      name: 'BONK Token',
+      symbol: 'BONK',
       color: '#2962FF',
       topColor: '#2962FF',
       bottomColor: 'rgba(41, 98, 255, 0.28)',
-      currentPrice: null,
-      priceDirection: null,
-      data: []
-    },
-    {
-      mint: '9wK8yN6iz1ie5kEJkvZCTxyN1x5sTdNfx8yeMY8Ebonk',
-      name: 'BONK Token 2',
-      symbol: 'BONK2',
-      color: '#FF6B35',
-      topColor: '#FF6B35',
-      bottomColor: 'rgba(255, 107, 53, 0.28)',
-      currentPrice: null,
-      priceDirection: null,
-      data: []
-    },
-    {
-      mint: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263',
-      name: 'BONK Token 3',
-      symbol: 'BONK3',
-      color: '#10B981',
-      topColor: '#10B981',
-      bottomColor: 'rgba(16, 185, 129, 0.28)',
-      currentPrice: null,
-      priceDirection: null,
-      data: []
-    },
-    {
-      mint: 'AtortPA9SVbkKmdzu5zg4jxgkR4howvPshorA9jYbonk',
-      name: 'BONK Token 4',
-      symbol: 'BONK4',
-      color: '#8B5CF6',
-      topColor: '#8B5CF6',
-      bottomColor: 'rgba(139, 92, 246, 0.28)',
       currentPrice: null,
       priceDirection: null,
       data: []
@@ -403,8 +370,8 @@ const InteractiveChart: React.FC = () => {
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-black text-gray-900">Multi-Token Chart</h3>
-            <p className="text-sm text-gray-600">4 BONK tokens with real-time price updates</p>
+            <h3 className="text-lg font-black text-gray-900">BONK Token Chart</h3>
+            <p className="text-sm text-gray-600">Real-time price updates</p>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
@@ -415,16 +382,16 @@ const InteractiveChart: React.FC = () => {
 
       {/* Token Legend */}
       <div className="px-4 py-3 border-b border-gray-100">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="flex justify-center">
           {tokens.map((token) => (
-            <div key={token.mint} className="flex items-center space-x-2">
+            <div key={token.mint} className="flex items-center space-x-3">
               <div 
                 className="w-4 h-4 rounded-full" 
                 style={{ backgroundColor: token.color }}
               ></div>
               <div className="min-w-0">
-                <div className="text-sm font-medium text-gray-900 truncate">{token.symbol}</div>
-                <div className={`text-xs font-mono transition-all duration-300 ${
+                <div className="text-lg font-medium text-gray-900">{token.symbol}</div>
+                <div className={`text-base font-mono transition-all duration-300 ${
                   token.currentPrice ? 
                     token.priceDirection === 'up' ? 'text-green-500 transform scale-110' :
                     token.priceDirection === 'down' ? 'text-red-500 transform scale-110' :

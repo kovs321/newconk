@@ -98,12 +98,12 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Pitch Deck Section */}
-        <section id="pitch" className="py-12 px-4">
-          <div className="container mx-auto max-w-6xl">
-            <div className="bg-gray-50 rounded-lg p-8 shadow-sm">
-              <h3 className="text-2xl font-black text-gray-900 mb-6 text-center">Pitch Deck</h3>
-              <PitchDeck />
+        {/* Voting Panel */}
+        <section id="voting" className="py-12 px-4 bg-gray-50">
+          <div className="container mx-auto max-w-4xl">
+            <div className="bg-white rounded-lg p-8 shadow-sm">
+              <h3 className="text-2xl font-black text-gray-900 mb-6">Vote for New Tokens</h3>
+              <VotingPanel />
             </div>
           </div>
         </section>
@@ -118,12 +118,12 @@ const Index = () => {
           />
         </section>
 
-        {/* Voting Panel */}
-        <section id="voting" className="py-12 px-4 bg-gray-50">
-          <div className="container mx-auto max-w-4xl">
-            <div className="bg-white rounded-lg p-8 shadow-sm">
-              <h3 className="text-2xl font-black text-gray-900 mb-6">Vote for New Tokens</h3>
-              <VotingPanel />
+        {/* Pitch Deck Section */}
+        <section id="pitch" className="py-12 px-4">
+          <div className="container mx-auto max-w-6xl">
+            <div className="bg-gray-50 rounded-lg p-8 shadow-sm">
+              <h3 className="text-2xl font-black text-gray-900 mb-6 text-center">Pitch Deck</h3>
+              <PitchDeck />
             </div>
           </div>
         </section>

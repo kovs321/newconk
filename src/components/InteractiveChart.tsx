@@ -6,6 +6,24 @@ interface ChartData {
   value: number;
 }
 
+interface TokenInfo {
+  mint: string;
+  name: string;
+  symbol: string;
+  currentPrice: number | null;
+  priceDirection: 'up' | 'down' | null;
+  status: 'active' | 'error' | 'loading';
+}
+
+interface TokenData {
+  time: number;
+  close: number;
+  open: number;
+  high: number;
+  low: number;
+  volume: number;
+}
+
 const InteractiveChart: React.FC = () => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -18,8 +36,40 @@ const InteractiveChart: React.FC = () => {
   const [previousPrice, setPreviousPrice] = useState<number | null>(null);
   const [priceDirection, setPriceDirection] = useState<'up' | 'down' | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
-  
-  const TOKEN_MINT = '34VWJ7PPwcPpYEqTGJQXo8qaMJYoP8VKuBGHPG3ypump';
+  const [tokens, setTokens] = useState<TokenInfo[]>([
+    {
+      mint: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263',
+      name: 'Token 1',
+      symbol: 'TKN1',
+      currentPrice: null,
+      priceDirection: null,
+      status: 'loading'
+    },
+    {
+      mint: '9wK8yN6iz1ie5kEJkvZCTxyN1x5sTdNfx8yeMY8Ebonk',
+      name: 'Token 2',
+      symbol: 'TKN2',
+      currentPrice: null,
+      priceDirection: null,
+      status: 'loading'
+    },
+    {
+      mint: 'Dz9mQ9NzkBcCsuGPFJ3r1bS4wgqKMHBPiVuniW8Mbonk',
+      name: 'Token 3',
+      symbol: 'TKN3',
+      currentPrice: null,
+      priceDirection: null,
+      status: 'loading'
+    },
+    {
+      mint: 'AtortPA9SVbkKmdzu5zg4jxgkR4howvPshorA9jYbonk',
+      name: 'Token 4',
+      symbol: 'TKN4',
+      currentPrice: null,
+      priceDirection: null,
+      status: 'loading'
+    }
+  ]);
 
   const SOLANA_TRACKER_API_KEY = 'ab5915df-4f94-449a-96c5-c37cbc92ef47';
   
@@ -45,12 +95,12 @@ const InteractiveChart: React.FC = () => {
     return data;
   };
 
-  // Fetch data
-  const fetchData = async (): Promise<ChartData[]> => {
+  // Fetch data for a single token
+  const fetchTokenData = async (tokenMint: string): Promise<TokenData[]> => {
     try {
-      console.log('Fetching OHLC data from Solana Tracker API...');
+      console.log(`Fetching OHLC data for token: ${tokenMint}`);
       const response = await fetch(
-        `https://data.solanatracker.io/chart/${TOKEN_MINT}?type=1m&limit=100`,
+        `https://data.solanatracker.io/chart/${tokenMint}?type=1m&limit=100`,
         {
           headers: {
             'x-api-key': SOLANA_TRACKER_API_KEY,
@@ -64,23 +114,131 @@ const InteractiveChart: React.FC = () => {
 
       const result = await response.json();
       
-      let chartData: ChartData[] = [];
+      let tokenData: TokenData[] = [];
       
       if (result.oclhv && Array.isArray(result.oclhv)) {
-        chartData = result.oclhv
+        tokenData = result.oclhv
           .filter((item: any) => item && item.time && item.close)
           .map((item: any) => ({
             time: item.time,
-            value: item.close,
+            close: item.close,
+            open: item.open || item.close,
+            high: item.high || item.close,
+            low: item.low || item.close,
+            volume: item.volume || 0,
           }))
           .sort((a, b) => a.time - b.time);
       }
 
-      return chartData;
+      return tokenData;
     } catch (err) {
-      console.error('Error fetching data:', err);
+      console.error(`Error fetching data for token ${tokenMint}:`, err);
       return [];
     }
+  };
+
+  // Fetch data for all tokens
+  const fetchMultiTokenData = async (): Promise<{ [tokenMint: string]: TokenData[] }> => {
+    try {
+      console.log('Fetching OHLC data for all 4 tokens...');
+      
+      const fetchPromises = tokens.map(async (token) => {
+        const data = await fetchTokenData(token.mint);
+        return { mint: token.mint, data };
+      });
+
+      const results = await Promise.all(fetchPromises);
+      
+      const tokenDataMap: { [tokenMint: string]: TokenData[] } = {};
+      results.forEach(({ mint, data }) => {
+        tokenDataMap[mint] = data;
+      });
+
+      return tokenDataMap;
+    } catch (err) {
+      console.error('Error fetching multi-token data:', err);
+      return {};
+    }
+  };
+
+  // Calculate averaged data from multiple tokens
+  const calculateAverageData = (tokenDataMap: { [tokenMint: string]: TokenData[] }): ChartData[] => {
+    try {
+      console.log('Calculating average data from', Object.keys(tokenDataMap).length, 'tokens');
+      
+      // Get all unique timestamps
+      const allTimestamps = new Set<number>();
+      Object.values(tokenDataMap).forEach(tokenData => {
+        tokenData.forEach(item => allTimestamps.add(item.time));
+      });
+
+      const sortedTimestamps = Array.from(allTimestamps).sort((a, b) => a - b);
+      
+      const averagedData: ChartData[] = [];
+      
+      sortedTimestamps.forEach(timestamp => {
+        const prices: number[] = [];
+        
+        // Collect prices for this timestamp from all tokens
+        Object.values(tokenDataMap).forEach(tokenData => {
+          const dataPoint = tokenData.find(item => item.time === timestamp);
+          if (dataPoint && dataPoint.close > 0) {
+            prices.push(dataPoint.close);
+          }
+        });
+        
+        // Only include timestamp if we have data from at least 2 tokens
+        if (prices.length >= 2) {
+          const averagePrice = prices.reduce((sum, price) => sum + price, 0) / prices.length;
+          averagedData.push({
+            time: timestamp,
+            value: averagePrice
+          });
+        }
+      });
+
+      console.log('Generated', averagedData.length, 'averaged data points');
+      return averagedData;
+    } catch (err) {
+      console.error('Error calculating average data:', err);
+      return [];
+    }
+  };
+
+  // Update individual token prices and statuses
+  const updateTokenPrices = (tokenDataMap: { [tokenMint: string]: TokenData[] }) => {
+    setTokens(prevTokens => 
+      prevTokens.map(token => {
+        const tokenData = tokenDataMap[token.mint];
+        if (tokenData && tokenData.length > 0) {
+          const latestPrice = tokenData[tokenData.length - 1].close;
+          const previousPrice = token.currentPrice;
+          
+          return {
+            ...token,
+            currentPrice: latestPrice,
+            priceDirection: previousPrice && latestPrice ? 
+              (latestPrice > previousPrice ? 'up' : 'down') : null,
+            status: 'active' as const
+          };
+        } else {
+          return {
+            ...token,
+            status: 'error' as const
+          };
+        }
+      })
+    );
+
+    // Reset price directions after animation
+    setTimeout(() => {
+      setTokens(prevTokens => 
+        prevTokens.map(token => ({
+          ...token,
+          priceDirection: null
+        }))
+      );
+    }, 1000);
   };
 
   // Initial data load
@@ -89,12 +247,18 @@ const InteractiveChart: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      console.log('Loading initial chart data...');
-      const apiData = await fetchData();
+      console.log('Loading initial chart data for 4 tokens...');
+      const tokenDataMap = await fetchMultiTokenData();
       
-      // If no API data, use sample data
-      const chartData = apiData.length > 5 ? apiData : generateSampleData();
+      // Calculate averaged data
+      const averagedData = calculateAverageData(tokenDataMap);
+      
+      // If no averaged data, use sample data
+      const chartData = averagedData.length > 5 ? averagedData : generateSampleData();
       setData(chartData);
+      
+      // Update individual token prices and statuses
+      updateTokenPrices(tokenDataMap);
       
       if (chartData.length > 0) {
         const latestPrice = chartData[chartData.length - 1].value;
@@ -147,14 +311,18 @@ const InteractiveChart: React.FC = () => {
     try {
       setIsUpdating(true);
       
-      const latestData = await fetchData();
+      const tokenDataMap = await fetchMultiTokenData();
+      const averagedData = calculateAverageData(tokenDataMap);
       
-      if (latestData.length > 0) {
+      if (averagedData.length > 0) {
         // Update chart data - the useEffect will handle updating the series
-        setData(latestData);
+        setData(averagedData);
         
-        // Update price and direction
-        const latestPrice = latestData[latestData.length - 1].value;
+        // Update individual token prices and statuses
+        updateTokenPrices(tokenDataMap);
+        
+        // Update averaged price and direction
+        const latestPrice = averagedData[averagedData.length - 1].value;
         if (currentPrice !== null) {
           setPreviousPrice(currentPrice);
           setPriceDirection(latestPrice > currentPrice ? 'up' : 'down');
@@ -319,8 +487,10 @@ const InteractiveChart: React.FC = () => {
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-black text-gray-900">Live Token Chart</h3>
-            <p className="text-sm text-gray-600">BONK Price Updates</p>
+            <h3 className="text-lg font-black text-gray-900">4-Token Average Chart</h3>
+            <p className="text-sm text-gray-600">
+              Averaged price from {tokens.filter(t => t.status === 'active').length}/4 tokens
+            </p>
           </div>
           <div className="flex items-center space-x-4">
             <div className={`text-lg font-mono transition-all duration-300 ${
@@ -342,6 +512,46 @@ const InteractiveChart: React.FC = () => {
               <span className="text-sm font-medium text-gray-600">Live</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Token Status */}
+      <div className="px-4 py-3 border-b border-gray-100">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {tokens.map((token, index) => (
+            <div key={token.mint} className="flex items-center space-x-2">
+              <div className={`w-3 h-3 rounded-full ${
+                token.status === 'active' ? 'bg-green-500' :
+                token.status === 'error' ? 'bg-red-500' :
+                'bg-yellow-500 animate-pulse'
+              }`}></div>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium text-gray-900">{token.symbol}</div>
+                <div className={`text-xs font-mono transition-all duration-300 ${
+                  token.currentPrice ? 
+                    token.priceDirection === 'up' ? 'text-green-500 transform scale-110' :
+                    token.priceDirection === 'down' ? 'text-red-500 transform scale-110' :
+                    'text-gray-600' 
+                  : 'text-gray-400'
+                }`}>
+                  {token.status === 'active' ? (
+                    <>
+                      ${formatPrice(token.currentPrice)}
+                      {token.priceDirection && (
+                        <span className="ml-1">
+                          {token.priceDirection === 'up' ? '↗' : '↘'}
+                        </span>
+                      )}
+                    </>
+                  ) : token.status === 'error' ? (
+                    'Error'
+                  ) : (
+                    'Loading...'
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -381,7 +591,7 @@ const InteractiveChart: React.FC = () => {
       {/* Footer */}
       <div className="px-4 pb-4">
         <div className="text-xs text-gray-500 text-center">
-          {error ? 'Sample data displayed' : 'Real-time updates every second via Solana Tracker API'}
+          {error ? 'Sample data displayed' : 'Real-time averaged updates from 4 tokens every second via Solana Tracker API'}
         </div>
       </div>
     </div>

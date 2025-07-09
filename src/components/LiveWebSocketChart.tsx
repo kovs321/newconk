@@ -1,93 +1,31 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { createChart, IChartApi, ISeriesApi, Time, AreaSeries } from 'lightweight-charts';
-// import { HeatMapSeries, HeatMapData, HeatMapSeriesOptions } from './HeatMapSeries';
+import { createChart, HistogramSeries, IChartApi, ISeriesApi } from 'lightweight-charts';
 
 interface PriceData {
   time: number;
   value: number;
 }
 
-interface HeatMapBucket {
-  time: number;
-  prices: number[];
-  startTime: number;
-  endTime: number;
-  intensity: number;
-  averagePrice: number;
-}
-
-interface HeatMapData {
-  time: Time;
-  value: number;
-  amount: number;
-}
-
 const LiveWebSocketChart: React.FC = () => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const seriesRef = useRef<ISeriesApi<'Area'> | null>(null);
+  const seriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttempts = useRef<number>(0);
   
   const [data, setData] = useState<PriceData[]>([]);
-  const [heatmapData, setHeatmapData] = useState<HeatMapData[]>([]);
-  const [currentBucket, setCurrentBucket] = useState<HeatMapBucket | null>(null);
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
   const [priceDirection, setPriceDirection] = useState<'up' | 'down' | null>(null);
-  const [currentIntensity, setCurrentIntensity] = useState<number>(0);
   const [wsStatus, setWsStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
   const [error, setError] = useState<string | null>(null);
-  
-  const BUCKET_SIZE = 30; // 30 seconds per bucket
-  const MAX_INTENSITY = 100; // Maximum intensity value for color scaling
 
-  const TOKEN_MINT = 'So11111111111111111111111111111111111111111'; // SOL wrapped token
-  const ALTERNATIVE_TOKENS = [
-    'So11111111111111111111111111111111111111111', // Wrapped SOL
-    'SOL', // Symbol
-    'solana', // Name
-    '11111111111111111111111111111111', // Native SOL
-    'So1111111111111111111111111111111111111111' // Alternative format
-  ];
+  const TOKEN_MINT = 'So11111111111111111111111111111111111111111';
   const SOLANA_TRACKER_WS_URL = 'wss://datastream.solanatracker.io/d4fc0684-2e18-4de4-abab-cbe984738ea7';
   
   const reconnectDelay = 2500;
   const reconnectDelayMax = 4500;
   const randomizationFactor = 0.5;
-  
-  // Turbo color scheme function
-  const turboColor = (t: number): string => {
-    t = Math.max(0, Math.min(1, t));
-    const r = Math.max(0, Math.min(255, Math.round(34.61 + t * (1172.33 - t * (10793.56 - t * (33300.12 - t * (38394.49 - t * 14825.05)))))));
-    const g = Math.max(0, Math.min(255, Math.round(23.31 + t * (557.33 + t * (1225.33 - t * (3574.96 - t * (1073.77 + t * 707.56)))))));
-    const b = Math.max(0, Math.min(255, Math.round(27.2 + t * (3211.1 - t * (15327.97 - t * (27814 - t * (22569.18 - t * 6838.66)))))));
-    return `rgb(${r}, ${g}, ${b})`;
-  };
-  
-  // Cell shader function for heatmap
-  const cellShader = (amount: number) => {
-    return turboColor(amount / MAX_INTENSITY);
-  };
-  
-  // Calculate price change intensity
-  const calculateIntensity = (prices: number[]): number => {
-    if (prices.length < 2) return 0;
-    
-    const priceChanges = [];
-    for (let i = 1; i < prices.length; i++) {
-      const change = Math.abs(prices[i] - prices[i-1]) / prices[i-1] * 100;
-      priceChanges.push(change);
-    }
-    
-    const avgChange = priceChanges.reduce((sum, change) => sum + change, 0) / priceChanges.length;
-    return Math.min(avgChange * 10, MAX_INTENSITY); // Scale intensity
-  };
-  
-  // Get current time bucket
-  const getCurrentBucketTime = (timestamp: number): number => {
-    return Math.floor(timestamp / BUCKET_SIZE) * BUCKET_SIZE;
-  };
 
   // Initialize chart
   useEffect(() => {
@@ -131,10 +69,8 @@ const LiveWebSocketChart: React.FC = () => {
         },
       });
       
-      const areaSeries = chart.addSeries(AreaSeries, {
-        lineColor: '#2962FF',
-        topColor: '#2962FF',
-        bottomColor: 'rgba(41, 98, 255, 0.28)',
+      const histogramSeries = chart.addSeries(HistogramSeries, { 
+        color: '#26a69a',
         priceFormat: {
           type: 'price',
           precision: 8,
@@ -142,15 +78,15 @@ const LiveWebSocketChart: React.FC = () => {
         },
         priceLineVisible: true,
         lastValueVisible: true,
-        title: 'Live Price Movement',
+        title: 'Live Price',
       });
 
       chartRef.current = chart;
-      seriesRef.current = areaSeries;
+      seriesRef.current = histogramSeries;
 
       // Initialize with existing data if any
       if (data.length > 0) {
-        areaSeries.setData(data);
+        histogramSeries.setData(data);
       }
 
       console.log('Live heatmap chart initialized successfully');
@@ -204,12 +140,9 @@ const LiveWebSocketChart: React.FC = () => {
     ws.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
-        console.log('Raw WebSocket message:', event.data);
-        console.log('Parsed message:', message);
         handleWebSocketMessage(message);
       } catch (error) {
         console.error('Error parsing WebSocket message:', error);
-        console.error('Raw message data:', event.data);
       }
     };
 
@@ -244,177 +177,66 @@ const LiveWebSocketChart: React.FC = () => {
 
   const subscribeToPriceUpdates = () => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      console.log('WebSocket not ready for subscription');
       return;
     }
 
-    // Try multiple subscription formats with different token representations
-    const subscriptions: any[] = [];
-    
-    ALTERNATIVE_TOKENS.forEach(token => {
-      subscriptions.push(
-        { type: 'join', room: `price:${token}` },
-        { type: 'join', room: `token:${token}` },
-        { type: 'subscribe', channel: `price:${token}` },
-        { type: 'subscribe', token: token }
-      );
-    });
+    const priceSubscription = {
+      type: 'join',
+      room: `price:${TOKEN_MINT}`
+    };
 
-    // Also try some generic subscriptions
-    subscriptions.push(
-      { type: 'join', room: 'prices' },
-      { type: 'join', room: 'all' },
-      { type: 'subscribe', channel: 'prices' },
-      { type: 'subscribe', channel: 'all' }
-    );
-
-    subscriptions.forEach(subscription => {
-      try {
-        wsRef.current!.send(JSON.stringify(subscription));
-        console.log('Subscription attempt sent:', subscription);
-      } catch (error) {
-        console.error('Error sending subscription:', error);
-      }
-    });
-
-    console.log(`Attempted multiple subscription formats for token: ${TOKEN_MINT}`);
+    wsRef.current.send(JSON.stringify(priceSubscription));
+    console.log(`Subscribed to live price updates for token: ${TOKEN_MINT}`);
   };
 
   const handleWebSocketMessage = (message: any) => {
-    console.log('WebSocket message received:', message);
-    console.log('Message type:', message.type);
-    console.log('Message room:', message.room);
-    console.log('Expected room:', `price:${TOKEN_MINT}`);
-    
     if (message.type === 'message') {
-      // Check if this is a price update from any room
-      if (message.room && message.room.includes('price') && message.data) {
+      if (message.room === `price:${TOKEN_MINT}`) {
         const priceData = message.data;
-        console.log('Live price update received from room:', message.room);
-        console.log('Price data:', priceData);
+        console.log('Live price update received:', priceData);
         
-        // Try to extract price and time from different possible formats
-        let price = priceData.price || priceData.value || priceData.close || priceData.last;
-        let time = priceData.time || priceData.timestamp || Date.now();
-        
-          if (price && time) {
-            const timestamp = Math.floor(time / 1000);
+        const newPoint: PriceData = {
+          time: Math.floor(priceData.time / 1000),
+          value: priceData.price
+        };
+
+        // Update current price with direction
+        setCurrentPrice(prevPrice => {
+          if (prevPrice !== null) {
+            setPriceDirection(priceData.price > prevPrice ? 'up' : 'down');
+            setTimeout(() => setPriceDirection(null), 1000);
+          }
+          return priceData.price;
+        });
+
+        // Add to chart data
+        setData(prevData => {
+          const newData = [...prevData, newPoint];
           
-            // Update current price with direction
-            setCurrentPrice(prevPrice => {
-              if (prevPrice !== null) {
-                setPriceDirection(price > prevPrice ? 'up' : 'down');
-                setTimeout(() => setPriceDirection(null), 1000);
-              }
-              return price;
-            });
-
-            // Add to regular data array for reference
-            setData(prevData => {
-              const newData = [...prevData, { time: timestamp, value: price }];
-              if (newData.length > 1000) {
-                newData.splice(0, newData.length - 1000);
-              }
-              return newData;
-            });
-
-            // Process into heatmap buckets
-            const bucketTime = getCurrentBucketTime(timestamp);
-            
-            setCurrentBucket(prevBucket => {
-              let updatedBucket: HeatMapBucket;
-              
-              if (!prevBucket || prevBucket.time !== bucketTime) {
-                // New bucket - finalize previous one if exists
-                if (prevBucket) {
-                  const finalIntensity = calculateIntensity(prevBucket.prices);
-                  const avgPrice = prevBucket.prices.reduce((sum, p) => sum + p, 0) / prevBucket.prices.length;
-                  
-                  const heatmapPoint: HeatMapData = {
-                    time: prevBucket.time as Time,
-                    value: avgPrice,
-                    amount: finalIntensity
-                  };
-                  
-                  setHeatmapData(prevHeatmap => {
-                    const newHeatmap = [...prevHeatmap, heatmapPoint];
-                    if (newHeatmap.length > 200) {
-                      newHeatmap.splice(0, newHeatmap.length - 200);
-                    }
-                    
-                    // Update chart with the new point
-                    if (seriesRef.current) {
-                      try {
-                        const chartPoint = {
-                          time: heatmapPoint.time,
-                          value: heatmapPoint.value
-                        };
-                        seriesRef.current.update(chartPoint);
-                      } catch (error) {
-                        console.error('Error updating chart:', error);
-                      }
-                    }
-                    
-                    return newHeatmap;
-                  });
-                }
-            
-            // Start new bucket
-            updatedBucket = {
-              time: bucketTime,
-              prices: [price],
-              startTime: timestamp,
-              endTime: timestamp,
-              intensity: 0,
-              averagePrice: price
-            };
-          } else {
-            // Add to existing bucket
-            updatedBucket = {
-              ...prevBucket,
-              prices: [...prevBucket.prices, price],
-              endTime: timestamp,
-              averagePrice: (prevBucket.averagePrice * prevBucket.prices.length + price) / (prevBucket.prices.length + 1)
-            };
+          // Keep only last 1000 points for performance
+          if (newData.length > 1000) {
+            newData.splice(0, newData.length - 1000);
           }
           
-              // Calculate current intensity for display
-              const currentIntensity = calculateIntensity(updatedBucket.prices);
-              setCurrentIntensity(currentIntensity);
-              
-              return updatedBucket;
-            });
+          return newData;
+        });
 
-            // Auto-scroll to keep latest data visible
-            if (chartRef.current) {
-              const timeScale = chartRef.current.timeScale();
-              const logicalRange = timeScale.getVisibleLogicalRange();
-              
-              if (logicalRange && logicalRange.to > heatmapData.length - 5) {
-                timeScale.scrollToRealTime();
-              }
+        // Update chart
+        if (seriesRef.current) {
+          seriesRef.current.update(newPoint);
+          
+          // Auto-scroll to keep latest data visible
+          if (chartRef.current) {
+            const timeScale = chartRef.current.timeScale();
+            const logicalRange = timeScale.getVisibleLogicalRange();
+            
+            // If we're close to the right edge, scroll to show new data
+            if (logicalRange && logicalRange.to > data.length - 10) {
+              timeScale.scrollToRealTime();
             }
-          } else {
-            console.log('No price/time data found in message:', priceData);
           }
-        } else {
-          console.log('Message from different room:', message.room);
-          console.log('Message data:', message.data);
         }
-      } else if (message.type === 'join') {
-        console.log('Join confirmation received:', message);
-      } else if (message.type === 'ping') {
-        console.log('Ping received:', message);
-        // Respond to ping with pong
-        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-          wsRef.current.send(JSON.stringify({ type: 'pong' }));
-        }
-      } else {
-        console.log('Non-message type received:', message.type);
-        console.log('Full message:', message);
       }
-    } else {
-      console.log('Message without type field:', message);
     }
   };
 
@@ -455,8 +277,8 @@ const LiveWebSocketChart: React.FC = () => {
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-black text-gray-900">Live Price Movement</h3>
-            <p className="text-sm text-gray-600">Real-time price buckets with intensity tracking</p>
+            <h3 className="text-lg font-black text-gray-900">Live WebSocket Chart</h3>
+            <p className="text-sm text-gray-600">Real-time price updates only</p>
           </div>
           <div className="flex items-center space-x-6">
             <div className="text-right">
@@ -474,19 +296,6 @@ const LiveWebSocketChart: React.FC = () => {
                     {priceDirection === 'up' ? '↗' : '↘'}
                   </span>
                 )}
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-xs text-gray-500 mb-1">Movement Intensity</div>
-              <div className="flex items-center space-x-2">
-                <div 
-                  className="w-6 h-6 rounded border-2 border-gray-300"
-                  style={{ backgroundColor: cellShader(currentIntensity) }}
-                  title={`Intensity: ${currentIntensity.toFixed(1)}`}
-                ></div>
-                <span className="text-sm font-mono text-gray-700">
-                  {currentIntensity.toFixed(1)}%
-                </span>
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -518,21 +327,7 @@ const LiveWebSocketChart: React.FC = () => {
       {/* Footer */}
       <div className="px-4 pb-4">
         <div className="text-xs text-gray-500 text-center">
-          Live price movement via WebSocket • {heatmapData.length} buckets • 30s intervals
-        </div>
-        <div className="mt-2 flex justify-center items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: cellShader(0) }}></div>
-            <span className="text-xs text-gray-500">Low</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: cellShader(50) }}></div>
-            <span className="text-xs text-gray-500">Medium</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: cellShader(100) }}></div>
-            <span className="text-xs text-gray-500">High</span>
-          </div>
+          Live updates via Solana Tracker WebSocket • {data.length} data points
         </div>
       </div>
     </div>

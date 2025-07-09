@@ -22,9 +22,10 @@ const Index = () => {
         {/* Hero Section */}
         <section className="py-12 px-4">
           <div className="container mx-auto text-center">
-            <h2 className="text-5xl font-black mb-4">
+            <h2 className="text-5xl font-black mb-4 flex items-center justify-center gap-4">
+              <span className="text-gray-900">BONK</span>
               <RotatingText
-                texts={['BONK STRATEGY', 'TOKEN REWARDS', 'COMMUNITY POWER', 'BONK STRATEGY']}
+                texts={['STRATEGY', 'REWARDS', 'POWER', 'COMMUNITY']}
                 mainClassName="px-2 sm:px-2 md:px-3 bg-orange-500 text-white overflow-hidden py-0.5 sm:py-1 md:py-2 justify-center rounded-lg inline-block"
                 staggerFrom="last"
                 initial={{ y: "100%" }}

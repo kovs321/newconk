@@ -20,7 +20,7 @@ const LiveWebSocketChart: React.FC = () => {
   const [wsStatus, setWsStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
   const [error, setError] = useState<string | null>(null);
 
-  const TOKEN_MINT = 'So11111111111111111111111111111111111111111'; // SOL
+  const TOKEN_MINT = '71B6bJU6nAFrEJfRyvhToR4r9qA3H7tY2whvup4ibonk'; // Custom token
   const DATASTREAM_URL = 'wss://datastream.solanatracker.io/d4fc0684-2e18-4de4-abab-cbe984738ea7';
 
   // Initialize chart
@@ -75,7 +75,7 @@ const LiveWebSocketChart: React.FC = () => {
         },
         priceLineVisible: true,
         lastValueVisible: true,
-        title: 'SOL Live Price',
+        title: 'Token Live Price',
       });
 
       chartRef.current = chart;
@@ -250,7 +250,7 @@ const LiveWebSocketChart: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-black text-gray-900">Live WebSocket Chart</h3>
-            <p className="text-sm text-gray-600">Real-time SOL price via Solana Tracker SDK</p>
+            <p className="text-sm text-gray-600">Real-time token price via Solana Tracker SDK</p>
           </div>
           <div className="flex items-center space-x-6">
             <div className="text-right">

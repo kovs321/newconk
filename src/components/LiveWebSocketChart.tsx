@@ -103,7 +103,7 @@ const LiveWebSocketChart: React.FC = () => {
   useEffect(() => {
     const initializeDatastream = async () => {
       try {
-        console.log('Connecting to Solana Tracker WebSocket...');
+        console.log('🚀 NEW IMPLEMENTATION: Connecting to Solana Tracker WebSocket...');
         
         // Initialize the Datastream
         const dataStream = new Datastream({
@@ -114,7 +114,7 @@ const LiveWebSocketChart: React.FC = () => {
 
         // Handle connection events
         dataStream.on('connected', () => {
-          console.log('Connected to datastream');
+          console.log('🟢 NEW IMPLEMENTATION: Connected to datastream');
           setConnected(true);
         });
 
@@ -132,10 +132,10 @@ const LiveWebSocketChart: React.FC = () => {
         await dataStream.connect();
 
         // Subscribe to token price updates
-        console.log(`Subscribing to price updates for token: ${TOKEN_MINT}`);
+        console.log(`🔔 NEW IMPLEMENTATION: Subscribing to price updates for token: ${TOKEN_MINT}`);
         const subscription = dataStream.subscribe.price.token(TOKEN_MINT).on((priceData) => {
-          console.log(`New price: ${priceData.price}`);
-          console.log(`Time: ${new Date(priceData.time).toLocaleTimeString()}`);
+          console.log(`💰 NEW IMPLEMENTATION: New price: ${priceData.price}`);
+          console.log(`⏰ NEW IMPLEMENTATION: Time: ${new Date(priceData.time).toLocaleTimeString()}`);
           
           const newPoint: PriceData = {
             time: Math.floor(priceData.time / 1000),

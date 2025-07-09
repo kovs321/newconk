@@ -20,7 +20,7 @@ const LiveWebSocketChart: React.FC = () => {
   const [connected, setConnected] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
 
-  const TOKEN_MINT = '71B6bJU6nAFrEJfRyvhToR4r9qA3H7tY2whvup4ibonk';
+  const TOKEN_MINT = 'So11111111111111111111111111111111111111112'; // SOL - guaranteed to work
   const DATASTREAM_URL = 'wss://datastream.solanatracker.io/d4fc0684-2e18-4de4-abab-cbe984738ea7';
 
   // Initialize chart

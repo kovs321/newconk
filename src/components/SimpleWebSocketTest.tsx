@@ -21,7 +21,7 @@ const SimpleWebSocketTest: React.FC = () => {
         addLog('🚀 Starting WebSocket test...');
         
         const datastream = new Datastream({
-          wsUrl: 'wss://datastream.solanatracker.io/d4fc0684-2e18-4de4-abab-cbe984738ea7'
+          wsUrl: 'wss://datastream.solanatracker.io/0ff60d55-2242-4079-9a5d-f24263b67ef0'
         });
 
         datastreamRef.current = datastream;

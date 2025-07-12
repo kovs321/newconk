@@ -19,7 +19,9 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				sans: ['Nunito', 'SF Pro Rounded', '-apple-system', 'BlinkMacSystemFont', 'Helvetica Neue', 'Segoe UI', 'system-ui', 'sans-serif'],
+				sans: ['Exo 2', 'system-ui', 'sans-serif'],
+				logo: ['Orbitron', 'monospace'],
+				tech: ['Rajdhani', 'sans-serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',

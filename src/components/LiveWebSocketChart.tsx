@@ -23,7 +23,7 @@ const LiveWebSocketChart: React.FC = () => {
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
 
   const TOKEN_MINT = 'So11111111111111111111111111111111111111112'; // SOL - guaranteed to work
-  const DATASTREAM_URL = 'wss://datastream.solanatracker.io/d4fc0684-2e18-4de4-abab-cbe984738ea7';
+  const DATASTREAM_URL = 'wss://datastream.solanatracker.io/0ff60d55-2242-4079-9a5d-f24263b67ef0';
 
   // Initialize chart
   useEffect(() => {
@@ -31,14 +31,14 @@ const LiveWebSocketChart: React.FC = () => {
 
     const chart = createChart(chartContainerRef.current, {
       layout: { 
-        textColor: 'black', 
-        background: { type: 'solid', color: 'white' } 
+        textColor: 'white', 
+        background: { type: 'solid', color: '#111827' } 
       },
       width: chartContainerRef.current.clientWidth,
       height: 300,
       grid: {
-        vertLines: { color: '#f0f3fa' },
-        horzLines: { color: '#f0f3fa' },
+        vertLines: { color: '#374151' },
+        horzLines: { color: '#374151' },
       },
       crosshair: { mode: 1 },
       timeScale: {
@@ -50,8 +50,8 @@ const LiveWebSocketChart: React.FC = () => {
       rightPriceScale: {
         scaleMargins: { top: 0.1, bottom: 0.1 },
         borderVisible: true,
-        borderColor: '#D1D5DB',
-        textColor: '#333333',
+        borderColor: '#6B7280',
+        textColor: '#F9FAFB',
       },
       handleScroll: {
         mouseWheel: true,
@@ -256,12 +256,12 @@ const LiveWebSocketChart: React.FC = () => {
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-black text-gray-900">Live WebSocket Chart</h3>
-            <p className="text-sm text-gray-600">Real-time price via Solana Tracker SDK</p>
+            <h3 className="text-lg font-black text-gray-900 font-tech tracking-wider uppercase">Live WebSocket Chart</h3>
+            <p className="text-sm text-gray-600 font-tech">Real-time price via Solana Tracker SDK</p>
           </div>
           <div className="flex items-center space-x-6">
             <div className="text-right">
-              <div className="text-xs text-gray-500 mb-1">Live Price</div>
+              <div className="text-xs text-gray-500 mb-1 font-tech uppercase tracking-wider">Live Price</div>
               <div className={`text-xl font-bold transition-all duration-300 ${
                 currentPrice ? 
                   priceDirection === 'up' ? 'text-green-500 transform scale-105' :
@@ -281,7 +281,7 @@ const LiveWebSocketChart: React.FC = () => {
               <div className={`w-3 h-3 rounded-full ${
                 connected ? 'bg-green-500' : 'bg-red-500'
               }`}></div>
-              <span className="text-sm font-medium text-gray-600">
+              <span className="text-sm font-medium text-gray-600 font-tech tracking-wide">
                 {connected ? 'Connected' : 'Disconnected'}
               </span>
             </div>
@@ -293,14 +293,14 @@ const LiveWebSocketChart: React.FC = () => {
       <div className="px-4 py-2 border-b border-gray-100">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-300">
               {lastUpdateTime ? (
                 <span>Last update: {lastUpdateTime.toLocaleTimeString()}</span>
               ) : (
                 <span>No price updates received yet</span>
               )}
             </div>
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-gray-400">
               {data.length} data points
             </div>
           </div>
@@ -320,7 +320,7 @@ const LiveWebSocketChart: React.FC = () => {
 
       {/* Footer */}
       <div className="px-4 pb-4">
-        <div className="text-xs text-gray-500 text-center">
+        <div className="text-xs text-gray-400 text-center">
           {connected ? 'Connected to Solana Tracker WebSocket' : 'Disconnected from WebSocket'}
           {!lastUpdateTime && connected && (
             <span className="ml-2 text-yellow-600">

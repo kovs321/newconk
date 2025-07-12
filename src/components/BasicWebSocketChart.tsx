@@ -21,7 +21,7 @@ const BasicWebSocketChart: React.FC = () => {
   const [logs, setLogs] = useState<string[]>([]);
 
   const TOKEN_MINT = 'GJU3bXxNkNtYxgjkoFhAdq7VrXJAB2GW4Cpt6kLcbonk'; // Custom token
-  const WS_URL = 'wss://datastream.solanatracker.io/d4fc0684-2e18-4de4-abab-cbe984738ea7';
+  const WS_URL = 'wss://datastream.solanatracker.io/0ff60d55-2242-4079-9a5d-f24263b67ef0';
 
   const addLog = (message: string) => {
     const timestamp = new Date().toLocaleTimeString();
@@ -38,8 +38,8 @@ const BasicWebSocketChart: React.FC = () => {
 
     const chart = createChart(chartContainerRef.current, {
       layout: { 
-        textColor: 'black', 
-        background: { type: 'solid', color: 'white' } 
+        textColor: 'white', 
+        background: { type: 'solid', color: '#111827' } 
       },
       width: chartContainerRef.current.clientWidth,
       height: 250,

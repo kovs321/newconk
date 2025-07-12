@@ -72,7 +72,7 @@ const InteractiveChart: React.FC = () => {
     }
   ]);
 
-  const SOLANA_TRACKER_API_KEY = 'ab5915df-4f94-449a-96c5-c37cbc92ef47';
+  const SOLANA_TRACKER_API_KEY = '4be0cb55-c2d4-4fdc-a15d-75a14e5c0029';
   
   const updateIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -512,8 +512,8 @@ const InteractiveChart: React.FC = () => {
     try {
       const chart = createChart(chartContainerRef.current, {
         layout: { 
-          textColor: 'black', 
-          background: { type: 'solid', color: 'white' } 
+          textColor: 'white', 
+          background: { type: 'solid', color: '#111827' } 
         },
         width: chartContainerRef.current.clientWidth,
         height: 400,
@@ -627,7 +627,7 @@ const InteractiveChart: React.FC = () => {
       <div className="w-full h-96 flex items-center justify-center bg-gray-50 rounded-lg">
         <div className="flex items-center space-x-3">
           <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-gray-600">Loading interactive chart...</span>
+          <span className="text-gray-300">Loading interactive chart...</span>
         </div>
       </div>
     );
@@ -639,17 +639,17 @@ const InteractiveChart: React.FC = () => {
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-black text-gray-900">4-Token Normalized Average</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="text-lg font-black text-white font-tech tracking-wider uppercase">4-Token Normalized Average</h3>
+            <p className="text-sm text-gray-300">
               Smoothed percentage-based average from {tokens.filter(t => t.status === 'active').length}/4 tokens
             </p>
           </div>
           <div className="flex items-center space-x-4">
-            <div className={`text-lg font-mono transition-all duration-300 ${
+            <div className={`text-lg font-logo tracking-wider transition-all duration-300 ${
               currentPrice ? 
                 priceDirection === 'up' ? 'text-green-500 transform scale-110' :
                 priceDirection === 'down' ? 'text-red-500 transform scale-110' :
-                'text-gray-900' 
+                'text-white' 
               : 'text-gray-400'
             }`}>
               ${formatPrice(currentPrice)}
@@ -661,7 +661,7 @@ const InteractiveChart: React.FC = () => {
             </div>
             <div className="flex items-center space-x-2">
               <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
-              <span className="text-sm font-medium text-gray-600">Live</span>
+              <span className="text-sm font-medium text-gray-300">Live</span>
             </div>
           </div>
         </div>
@@ -683,7 +683,7 @@ const InteractiveChart: React.FC = () => {
                     }}
                   />
                 ) : (
-                  <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs font-bold text-gray-600">
+                  <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-xs font-bold text-white">
                     {token.symbol.charAt(0)}
                   </div>
                 )}
@@ -694,13 +694,13 @@ const InteractiveChart: React.FC = () => {
                 }`}></div>
               </div>
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-gray-900 truncate">{token.name}</div>
+                <div className="text-sm font-medium text-white truncate">{token.name}</div>
                 <div className="text-xs text-gray-500">{token.symbol}</div>
                 <div className={`text-xs font-mono transition-all duration-300 ${
                   token.currentPrice ? 
                     token.priceDirection === 'up' ? 'text-green-500 transform scale-110' :
                     token.priceDirection === 'down' ? 'text-red-500 transform scale-110' :
-                    'text-gray-600' 
+                    'text-gray-300' 
                   : 'text-gray-400'
                 }`}>
                   {token.status === 'active' ? (

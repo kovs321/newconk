@@ -8,7 +8,6 @@ import { Header } from '../components/Header';
 import DecryptedText from '../components/DecryptedText';
 import IkunHoldersBoard from '../components/IkunHoldersBoard';
 import StimulusCountdown from '../components/StimulusCountdown';
-import WalletEligibilityChecker from '../components/WalletEligibilityChecker';
 import { AnimatedShinyText } from '../components/AnimatedShinyText';
 
 const Index = () => {
@@ -88,13 +87,6 @@ const Index = () => {
             <div className="bg-black border border-gray-600 rounded-lg p-6">
               <IkunHoldersBoard />
             </div>
-          </div>
-        </section>
-
-        {/* Wallet Eligibility Checker Section */}
-        <section className="py-16 px-4">
-          <div className="container mx-auto max-w-4xl">
-            <WalletEligibilityChecker />
           </div>
         </section>
 

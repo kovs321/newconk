@@ -1,14 +1,14 @@
 
 import React from 'react';
-import TokenDistributionChart from '../components/TokenDistributionChart';
 import PerformanceChart from '../components/PerformanceChart';
 import VolumeChart from '../components/VolumeChart';
 import InteractiveChart from '../components/InteractiveChart';
-import BasicWebSocketChart from '../components/BasicWebSocketChart';
 import PitchDeck from '../components/PitchDeck';
-import HowItWorks from '../components/HowItWorks';
 import { Header } from '../components/Header';
-import TextPressure from '../components/TextPressure';
+import DecryptedText from '../components/DecryptedText';
+import IkunHoldersBoard from '../components/IkunHoldersBoard';
+import StimulusCountdown from '../components/StimulusCountdown';
+import WalletEligibilityChecker from '../components/WalletEligibilityChecker';
 
 const Index = () => {
   console.log('Index component loading with BONKDROP');
@@ -19,79 +19,107 @@ const Index = () => {
       {/* Main Content */}
       <main className="pt-16">
         {/* Hero Section */}
-        <section className="py-12 px-4">
+        <section className="py-16 px-4">
           <div className="container mx-auto text-center">
-            <div style={{position: 'relative', height: '100px', paddingTop: '20px'}} className="mb-4 flex items-start justify-center">
-              <TextPressure
+            <h2 className="text-6xl md:text-7xl font-black mb-6 text-orange-500 font-logo tracking-wider">
+              <DecryptedText 
                 text="BONKDROP"
-                flex={false}
-                alpha={false}
-                stroke={false}
-                width={true}
-                weight={true}
-                italic={true}
-                textColor="#ffffff"
-                strokeColor="#ff0000"
-                minFontSize={64}
-                scale={false}
-                className="font-logo"
+                speed={80}
+                maxIterations={15}
+                sequential={true}
+                revealDirection="center"
+                animateOn="view"
+                characters="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+"
+                className="text-orange-500"
+                encryptedClassName="text-gray-500"
               />
-            </div>
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto font-tech font-medium">
-              Experience the ultimate BONK airdrop platform with interactive rewards and community engagement
+            </h2>
+            <p className="text-2xl text-gray-300 max-w-3xl mx-auto font-tech font-medium mb-12">
+              Fair airdrop distribution for all holders - Earn rewards as fast as NOW
             </p>
+            
+            {/* Stimulus Countdown */}
+            <StimulusCountdown />
+            
+            {/* Requirements */}
+            <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-8">
+              <div className="bg-gray-900 border border-gray-600 rounded-lg p-6 text-center">
+                <div className="w-4 h-4 bg-orange-500 rounded-full mx-auto mb-3"></div>
+                <span className="text-gray-300 font-tech text-lg">Hold 100,000+ BONKDROP tokens</span>
+              </div>
+              <div className="bg-gray-900 border border-gray-600 rounded-lg p-6 text-center">
+                <div className="w-4 h-4 bg-orange-500 rounded-full mx-auto mb-3"></div>
+                <span className="text-gray-300 font-tech text-lg">Automatic stimulus every 5 minutes</span>
+              </div>
+              <div className="bg-gray-900 border border-gray-600 rounded-lg p-6 text-center">
+                <div className="w-4 h-4 bg-orange-500 rounded-full mx-auto mb-3"></div>
+                <span className="text-gray-300 font-tech text-lg">Fair distribution based on holdings</span>
+              </div>
+            </div>
+
+            {/* CTA Button */}
+            <button className="bg-orange-500 hover:bg-orange-600 text-black font-bold py-4 px-8 rounded-lg text-xl font-tech uppercase tracking-wider transition-all duration-300 transform hover:scale-105">
+              Connect Wallet & Start Earning
+            </button>
+          </div>
+        </section>
+
+        {/* IKUN Holders Leaderboard Section */}
+        <section className="py-16 px-4 bg-gray-900">
+          <div className="container mx-auto max-w-6xl">
+            <div className="text-center mb-8">
+              <h2 className="text-4xl font-black text-orange-500 mb-4 font-logo tracking-wider">
+                <DecryptedText 
+                  text="Growing Community"
+                  speed={70}
+                  maxIterations={10}
+                  sequential={true}
+                  revealDirection="center"
+                  animateOn="view"
+                  className="text-orange-500"
+                  encryptedClassName="text-gray-500"
+                />
+              </h2>
+              <p className="text-xl text-gray-300 font-tech">
+                Real-time tracking of IKUN holders in our ecosystem
+              </p>
+            </div>
+            <div className="bg-black border border-gray-600 rounded-lg p-6">
+              <IkunHoldersBoard />
+            </div>
+          </div>
+        </section>
+
+        {/* Wallet Eligibility Checker Section */}
+        <section className="py-16 px-4">
+          <div className="container mx-auto max-w-4xl">
+            <WalletEligibilityChecker />
           </div>
         </section>
 
         {/* Charts Section */}
-        <section id="charts" className="py-12 px-4">
+        <section id="charts" className="py-16 px-4">
           <div className="container mx-auto max-w-7xl">
-            <div className="grid lg:grid-cols-5 gap-6">
-              {/* Left Column - Two charts stacked */}
-              <div className="lg:col-span-3 space-y-6">
-                {/* Trading Chart */}
-                <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-sm">
-                  <InteractiveChart />
-                </div>
-                
-                {/* BSTR Chart */}
-                <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-sm">
-                  <h3 className="text-lg font-black text-white mb-4 font-tech tracking-wide">BSTR Chart</h3>
-                  <BasicWebSocketChart />
-                </div>
-              </div>
-              
-              {/* Right Column - Token Distribution */}
-              <div className="lg:col-span-2">
-                <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-sm">
-                  <h3 className="text-lg font-black text-white mb-4 font-tech tracking-wide">Token Distribution</h3>
-                  <div className="h-80">
-                    <TokenDistributionChart />
-                  </div>
-                  
-                  {/* Description */}
-                  <div className="mt-6 p-4 bg-gray-800 rounded-lg border border-gray-600">
-                    <h4 className="text-md font-bold text-white mb-3 font-tech uppercase tracking-wider">About BONKDROP Airdrops</h4>
-                    <p className="text-sm text-gray-300 leading-relaxed">
-                      BONKDROP is an innovative airdrop platform that rewards active community members with exclusive BONK token distributions. 
-                      Participants can earn airdrop eligibility through various engagement activities including social interactions, 
-                      trading volume, and community participation. Our platform tracks and monitors multiple tokens to provide 
-                      comprehensive airdrop opportunities for the Solana ecosystem.
-                    </p>
-                    <p className="text-sm text-gray-300 leading-relaxed mt-3">
-                      Airdrops are distributed based on real-time activity metrics and community engagement scores. 
-                      Our advanced scoring algorithm continuously evaluates user participation to ensure fair and transparent 
-                      distribution to eligible participants. By staying active in the BONKDROP ecosystem, users gain access to 
-                      exclusive token airdrops while benefiting from a transparent and automated distribution system.
-                    </p>
-                    <p className="text-sm text-gray-300 leading-relaxed mt-3">
-                      New airdrop opportunities are regularly added based on strategic partnerships and 
-                      community feedback. Our team continuously evaluates emerging projects to provide the most 
-                      valuable airdrop opportunities for BONKDROP participants.
-                    </p>
-                  </div>
-                </div>
-              </div>
+            <div className="text-center mb-8">
+              <h2 className="text-4xl font-black text-orange-500 mb-4 font-logo tracking-wider">
+                <DecryptedText 
+                  text="BONK Price Analytics"
+                  speed={70}
+                  maxIterations={10}
+                  sequential={true}
+                  revealDirection="center"
+                  animateOn="view"
+                  className="text-orange-500"
+                  encryptedClassName="text-gray-500"
+                />
+              </h2>
+              <p className="text-xl text-gray-300 font-tech">
+                Real-time price tracking and market insights
+              </p>
+            </div>
+            {/* Full Width Chart */}
+            <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-sm">
+              <InteractiveChart />
             </div>
           </div>
         </section>
@@ -100,19 +128,23 @@ const Index = () => {
         <section id="pitch" className="py-12 px-4">
           <div className="container mx-auto max-w-6xl">
             <div className="bg-gray-900 border border-gray-700 rounded-lg p-8 shadow-sm">
-              <h3 className="text-2xl font-black text-white mb-6 text-center font-logo tracking-wider">Pitch Deck</h3>
+              <h3 className="text-2xl font-black text-orange-500 mb-6 text-center font-logo tracking-wider">
+                <DecryptedText 
+                  text="Pitch Deck"
+                  speed={80}
+                  maxIterations={12}
+                  sequential={true}
+                  revealDirection="center"
+                  animateOn="view"
+                  className="text-orange-500"
+                  encryptedClassName="text-gray-500"
+                />
+              </h3>
               <PitchDeck />
             </div>
           </div>
         </section>
 
-        {/* How It Works */}
-        <section id="how" className="py-12 px-4 bg-gray-900">
-          <div className="container mx-auto max-w-6xl">
-            <h3 className="text-2xl font-black text-white text-center mb-8 font-logo tracking-wider">How It Works</h3>
-            <HowItWorks />
-          </div>
-        </section>
       </main>
     </div>
   );

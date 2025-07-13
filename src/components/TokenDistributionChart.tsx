@@ -21,13 +21,26 @@ const TokenDistributionChart = () => {
           outerRadius={80}
           fill="#8884d8"
           dataKey="value"
+          style={{ fontSize: '12px', fill: '#f97316' }}
         >
           {data.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={entry.color} />
           ))}
         </Pie>
-        <Tooltip />
-        <Legend />
+        <Tooltip 
+          contentStyle={{
+            backgroundColor: '#1f2937',
+            border: '1px solid #374151',
+            borderRadius: '8px',
+            color: '#f97316'
+          }}
+        />
+        <Legend 
+          wrapperStyle={{
+            color: '#f97316',
+            fontSize: '14px'
+          }}
+        />
       </PieChart>
     </ResponsiveContainer>
   );

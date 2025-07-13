@@ -1,4 +1,5 @@
 import React from 'react';
+import DecryptedText from './DecryptedText';
 
 const HowItWorks = () => {
   const steps = [
@@ -46,10 +47,21 @@ const HowItWorks = () => {
         <div key={index} className="bg-gray-800 border border-gray-600 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
           <div className="text-center mb-4">
             <div className="text-4xl mb-2">{step.icon}</div>
-            <div className="inline-flex items-center justify-center w-8 h-8 bg-orange-500 text-white rounded-full text-sm font-bold mb-2">
+            <div className="inline-flex items-center justify-center w-8 h-8 bg-gray-800 text-orange-500 rounded-full text-sm font-bold mb-2">
               {step.step}
             </div>
-            <h4 className="text-lg font-semibold text-white font-tech uppercase tracking-wider">{step.title}</h4>
+            <h4 className="text-lg font-semibold text-orange-500 font-tech uppercase tracking-wider">
+              <DecryptedText 
+                text={step.title}
+                speed={70}
+                maxIterations={10}
+                sequential={true}
+                revealDirection="center"
+                animateOn="view"
+                className="text-orange-500"
+                encryptedClassName="text-gray-500"
+              />
+            </h4>
           </div>
           <p className="text-gray-300 text-center leading-relaxed font-tech">{step.description}</p>
         </div>

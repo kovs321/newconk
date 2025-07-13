@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { CustomWalletButton } from './CustomWalletButton';
+import DecryptedText from './DecryptedText';
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -16,22 +17,65 @@ export const Header = () => {
   }, []);
 
   return (
-    <header className={`fixed top-0 left-0 right-0 bg-black border-b border-gray-700 z-50 transition-all duration-200 ${
-      isScrolled ? 'border-b border-gray-600 shadow-sm' : ''
+    <header className={`fixed top-0 left-0 right-0 bg-black z-50 transition-all duration-200 ${
+      isScrolled ? 'border-b border-gray-600 shadow-sm' : 'border-b border-transparent'
     }`}>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <h1 className="text-xl font-black text-white font-logo tracking-wider">BONKDROP</h1>
+            <h1 className="text-xl font-black text-orange-500 font-logo tracking-wider">
+              <DecryptedText 
+                text="BONKDROP"
+                speed={100}
+                maxIterations={10}
+                sequential={true}
+                revealDirection="start"
+                animateOn="hover"
+                className="text-orange-500"
+                encryptedClassName="text-gray-400"
+              />
+            </h1>
           </div>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <a href="#home" className="text-gray-300 hover:text-white transition-colors">Home</a>
-            <a href="#charts" className="text-gray-300 hover:text-white transition-colors">Charts</a>
-            <a href="#pitch" className="text-gray-300 hover:text-white transition-colors">Pitch Deck</a>
-            <a href="#how" className="text-gray-300 hover:text-white transition-colors">How it Works</a>
+            <a href="#home" className="text-gray-300 hover:text-orange-400 transition-colors">
+              <DecryptedText 
+                text="Home"
+                speed={80}
+                maxIterations={8}
+                sequential={true}
+                revealDirection="start"
+                animateOn="hover"
+                className="text-gray-300"
+                encryptedClassName="text-gray-500"
+              />
+            </a>
+            <a href="#charts" className="text-gray-300 hover:text-orange-400 transition-colors">
+              <DecryptedText 
+                text="Charts"
+                speed={80}
+                maxIterations={8}
+                sequential={true}
+                revealDirection="start"
+                animateOn="hover"
+                className="text-gray-300"
+                encryptedClassName="text-gray-500"
+              />
+            </a>
+            <a href="#pitch" className="text-gray-300 hover:text-orange-400 transition-colors">
+              <DecryptedText 
+                text="Pitch Deck"
+                speed={80}
+                maxIterations={8}
+                sequential={true}
+                revealDirection="start"
+                animateOn="hover"
+                className="text-gray-300"
+                encryptedClassName="text-gray-500"
+              />
+            </a>
           </nav>
 
           {/* Follow Us and Connect Wallet Buttons */}
@@ -40,17 +84,26 @@ export const Header = () => {
               href="https://x.com/thebonkstrategy"
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-gray-800 text-gray-300 px-4 py-2 rounded-full text-sm font-medium hover:bg-orange-500 hover:text-white transition-colors"
+              className="bg-gray-800 text-gray-300 px-4 py-2 rounded-full text-sm font-medium hover:bg-orange-500 hover:text-orange-400 transition-colors"
             >
-              Follow Us
+              <DecryptedText 
+                text="Follow Us"
+                speed={80}
+                maxIterations={8}
+                sequential={true}
+                revealDirection="start"
+                animateOn="hover"
+                className="text-gray-300"
+                encryptedClassName="text-gray-500"
+              />
             </a>
-            <CustomWalletButton className="bg-white text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-orange-500 hover:text-white transition-colors border-none" />
+            <CustomWalletButton className="bg-gray-800 text-orange-500 px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-700 hover:text-orange-400 transition-colors border-none" />
           </div>
 
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+            className="md:hidden p-2 rounded-md text-gray-300 hover:text-orange-400 hover:bg-gray-800 transition-colors"
           >
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               {isMenuOpen ? (
@@ -66,20 +119,61 @@ export const Header = () => {
         {isMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 bg-black border-t border-gray-700">
-              <a href="#home" className="block px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md transition-colors">Home</a>
-              <a href="#charts" className="block px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md transition-colors">Charts</a>
-              <a href="#pitch" className="block px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md transition-colors">Pitch Deck</a>
-              <a href="#how" className="block px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md transition-colors">How it Works</a>
+              <a href="#home" className="block px-3 py-2 text-gray-300 hover:text-orange-400 hover:bg-gray-800 rounded-md transition-colors">
+                <DecryptedText 
+                  text="Home"
+                  speed={80}
+                  maxIterations={8}
+                  sequential={true}
+                  revealDirection="start"
+                  animateOn="hover"
+                  className="text-gray-300"
+                  encryptedClassName="text-gray-500"
+                />
+              </a>
+              <a href="#charts" className="block px-3 py-2 text-gray-300 hover:text-orange-400 hover:bg-gray-800 rounded-md transition-colors">
+                <DecryptedText 
+                  text="Charts"
+                  speed={80}
+                  maxIterations={8}
+                  sequential={true}
+                  revealDirection="start"
+                  animateOn="hover"
+                  className="text-gray-300"
+                  encryptedClassName="text-gray-500"
+                />
+              </a>
+              <a href="#pitch" className="block px-3 py-2 text-gray-300 hover:text-orange-400 hover:bg-gray-800 rounded-md transition-colors">
+                <DecryptedText 
+                  text="Pitch Deck"
+                  speed={80}
+                  maxIterations={8}
+                  sequential={true}
+                  revealDirection="start"
+                  animateOn="hover"
+                  className="text-gray-300"
+                  encryptedClassName="text-gray-500"
+                />
+              </a>
               <div className="px-3 py-2 space-y-2">
                 <a
                   href="https://x.com/thebonkstrategy"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block bg-gray-800 text-gray-300 px-3 py-2 rounded-md text-sm font-medium hover:bg-orange-500 hover:text-white transition-colors text-center"
+                  className="block bg-gray-800 text-gray-300 px-3 py-2 rounded-md text-sm font-medium hover:bg-orange-500 hover:text-orange-400 transition-colors text-center"
                 >
-                  Follow Us
+                  <DecryptedText 
+                    text="Follow Us"
+                    speed={80}
+                    maxIterations={8}
+                    sequential={true}
+                    revealDirection="start"
+                    animateOn="hover"
+                    className="text-gray-300"
+                    encryptedClassName="text-gray-500"
+                  />
                 </a>
-                <CustomWalletButton className="bg-white text-black px-3 py-2 rounded-md text-sm font-medium hover:bg-orange-500 hover:text-white transition-colors border-none w-full" />
+                <CustomWalletButton className="bg-gray-800 text-orange-500 px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 hover:text-orange-400 transition-colors border-none w-full" />
               </div>
             </div>
           </div>

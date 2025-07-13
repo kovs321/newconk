@@ -38,7 +38,7 @@ const BasicWebSocketChart: React.FC = () => {
 
     const chart = createChart(chartContainerRef.current, {
       layout: { 
-        textColor: 'white', 
+        textColor: '#f97316', 
         background: { type: 'solid', color: '#111827' } 
       },
       width: chartContainerRef.current.clientWidth,
@@ -164,23 +164,23 @@ const BasicWebSocketChart: React.FC = () => {
   return (
     <div className="w-full space-y-4">
       {/* Status */}
-      <div className="flex items-center justify-between p-3 bg-gray-100 rounded">
+      <div className="flex items-center justify-between p-3 bg-gray-800 border border-gray-600 rounded">
         <div className="flex items-center space-x-2">
           <div className={`w-3 h-3 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-          <span className="font-medium">{connected ? 'Connected' : 'Disconnected'}</span>
+          <span className="font-medium text-orange-500">{connected ? 'Connected' : 'Disconnected'}</span>
         </div>
         <div className="text-right">
           <div className="text-lg font-bold">
             {currentPrice ? `$${currentPrice.toFixed(6)}` : '--'}
           </div>
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-gray-400">
             {lastUpdate ? `Last: ${lastUpdate}` : 'No updates'}
           </div>
         </div>
       </div>
 
       {/* Chart */}
-      <div ref={chartContainerRef} className="w-full h-60 border border-gray-200 rounded" />
+      <div ref={chartContainerRef} className="w-full h-60 border border-gray-600 rounded bg-gray-800" />
 
     </div>
   );

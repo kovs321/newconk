@@ -1,4 +1,5 @@
 import React from 'react';
+import DecryptedText from './DecryptedText';
 
 const PitchDeck = () => {
   const keyPoints = [
@@ -33,15 +34,35 @@ const PitchDeck = () => {
       <div className="grid md:grid-cols-2 gap-6">
         {keyPoints.map((point, index) => (
           <div key={index} className="bg-gray-800 border border-gray-600 rounded-lg p-6 hover:shadow-md transition-shadow">
-            <h4 className="text-lg font-semibold text-white mb-3 font-tech uppercase tracking-wider">{point.title}</h4>
+            <h4 className="text-lg font-semibold text-orange-500 mb-3 font-tech uppercase tracking-wider">
+              <DecryptedText 
+                text={point.title}
+                speed={70}
+                maxIterations={10}
+                sequential={true}
+                revealDirection="start"
+                animateOn="view"
+                className="text-orange-500"
+                encryptedClassName="text-gray-500"
+              />
+            </h4>
             <p className="text-gray-300 leading-relaxed font-tech">{point.content}</p>
           </div>
         ))}
       </div>
       
       <div className="text-center mt-8">
-        <button className="bg-orange-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-orange-600 transition-colors font-tech uppercase tracking-wider">
-          Download Full Deck
+        <button className="bg-gray-800 text-orange-500 px-6 py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors font-tech uppercase tracking-wider">
+          <DecryptedText 
+            text="Download Full Deck"
+            speed={80}
+            maxIterations={10}
+            sequential={true}
+            revealDirection="center"
+            animateOn="hover"
+            className="text-orange-500"
+            encryptedClassName="text-orange-200"
+          />
         </button>
       </div>
     </div>

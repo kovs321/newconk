@@ -22,15 +22,8 @@ const Index = () => {
         {/* Hero Section */}
         <section className="py-16 px-4">
           <div className="container mx-auto text-center">
-            <h2 className="text-6xl md:text-7xl font-black mb-6 font-logo tracking-wider">
-              <AnimatedShinyText 
-                shimmerWidth={120}
-                shimmerColor="orange"
-                animationSpeed={6}
-                className="text-6xl md:text-7xl font-black text-orange-500 font-logo tracking-wider"
-              >
-                BONKDROP
-              </AnimatedShinyText>
+            <h2 className="text-6xl md:text-7xl font-black mb-6 text-orange-500 font-logo tracking-wider">
+              BONKDROP
             </h2>
             <p className="text-2xl text-gray-300 max-w-3xl mx-auto font-tech font-medium mb-12">
               Fair airdrop distribution for all holders - Earn rewards as fast as NOW

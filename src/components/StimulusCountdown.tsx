@@ -77,10 +77,14 @@ const StimulusCountdown: React.FC = () => {
           Automatic rewards for holders with 100k+ BONKDROP tokens
         </p>
         
-        {/* Pulse effect */}
+        {/* Coin Animation */}
         <div className="mt-4">
           <div className="inline-flex items-center space-x-2">
-            <div className="w-3 h-3 bg-black rounded-full animate-pulse"></div>
+            <iframe 
+              src="https://lottie.host/embed/c49deb67-2942-4b74-b03c-8d1dd9538e84/U3OX1nU2hv.lottie"
+              className="w-6 h-6 border-0"
+              title="Live Stimulus Animation"
+            />
             <span className="text-black font-tech text-sm uppercase tracking-wider">
               Live Stimulus Active
             </span>

@@ -20,19 +20,31 @@ const Index = () => {
         {/* Hero Section */}
         <section className="py-16 px-4">
           <div className="container mx-auto text-center">
-            <h2 className="text-6xl md:text-7xl font-black mb-6 text-orange-500 font-logo tracking-wider">
-              <DecryptedText 
-                text="BONKDROP"
-                speed={80}
-                maxIterations={15}
-                sequential={true}
-                revealDirection="center"
-                animateOn="view"
-                characters="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+"
-                className="text-orange-500"
-                encryptedClassName="text-gray-500"
-              />
-            </h2>
+            <div className="flex items-center justify-center mb-6">
+              <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gray-800 border-2 border-orange-500 p-2 mr-4 flex items-center justify-center">
+                <img 
+                  src="https://arweave.net/hQiPZOsRZXGXBJd_82PhVdlM_hACsT_q6wqwf5cSY7I" 
+                  alt="BONK"
+                  className="w-full h-full rounded-full"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              </div>
+              <h2 className="text-6xl md:text-7xl font-black text-orange-500 font-logo tracking-wider">
+                <DecryptedText 
+                  text="BONKDROP"
+                  speed={80}
+                  maxIterations={15}
+                  sequential={true}
+                  revealDirection="center"
+                  animateOn="view"
+                  characters="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+"
+                  className="text-orange-500"
+                  encryptedClassName="text-gray-500"
+                />
+              </h2>
+            </div>
             <p className="text-2xl text-gray-300 max-w-3xl mx-auto font-tech font-medium mb-12">
               Fair airdrop distribution for all holders - Earn rewards as fast as NOW
             </p>

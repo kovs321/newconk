@@ -3,12 +3,11 @@ import React from 'react';
 import PerformanceChart from '../components/PerformanceChart';
 import VolumeChart from '../components/VolumeChart';
 import InteractiveChart from '../components/InteractiveChart';
-import PitchDeck from '../components/PitchDeck';
+import HowItWorks from '../components/HowItWorks';
 import { Header } from '../components/Header';
 import DecryptedText from '../components/DecryptedText';
 import IkunHoldersBoard from '../components/IkunHoldersBoard';
 import StimulusCountdown from '../components/StimulusCountdown';
-import { AnimatedShinyText } from '../components/AnimatedShinyText';
 
 const Index = () => {
   console.log('Index component loading with BONKDROP');
@@ -57,10 +56,6 @@ const Index = () => {
               </div>
             </div>
 
-            {/* CTA Button */}
-            <button className="bg-orange-500 hover:bg-orange-600 text-black font-bold py-4 px-8 rounded-lg text-xl font-tech uppercase tracking-wider transition-all duration-300 transform hover:scale-105">
-              Connect Wallet & Start Earning
-            </button>
           </div>
         </section>
 
@@ -117,13 +112,13 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Pitch Deck Section */}
-        <section id="pitch" className="py-12 px-4">
+        {/* How It Works Section */}
+        <section id="how-it-works" className="py-12 px-4">
           <div className="container mx-auto max-w-6xl">
             <div className="bg-gray-900 border border-gray-700 rounded-lg p-8 shadow-sm">
               <h3 className="text-2xl font-black text-orange-500 mb-6 text-center font-logo tracking-wider">
                 <DecryptedText 
-                  text="Pitch Deck"
+                  text="How It Works"
                   speed={80}
                   maxIterations={12}
                   sequential={true}
@@ -133,7 +128,7 @@ const Index = () => {
                   encryptedClassName="text-gray-500"
                 />
               </h3>
-              <PitchDeck />
+              <HowItWorks />
             </div>
           </div>
         </section>

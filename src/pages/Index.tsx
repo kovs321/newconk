@@ -37,6 +37,15 @@ const Index = () => {
               Fair airdrop distribution for all holders - Earn rewards as fast as NOW
             </p>
             
+            {/* Coin Animation */}
+            <div className="mb-8 flex justify-center">
+              <iframe 
+                src="https://lottie.host/embed/c49deb67-2942-4b74-b03c-8d1dd9538e84/U3OX1nU2hv.lottie"
+                className="w-32 h-32 md:w-40 md:h-40 border-0"
+                title="Coin Animation"
+              />
+            </div>
+            
             {/* Stimulus Countdown */}
             <StimulusCountdown />
             

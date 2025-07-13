@@ -36,17 +36,7 @@ const Index = () => {
               />
             </h2>
             <p className="text-2xl text-gray-300 max-w-3xl mx-auto font-tech font-medium mb-12">
-              <DecryptedText 
-                text="Fair airdrop distribution for all holders - Earn rewards as fast as NOW"
-                speed={60}
-                maxIterations={12}
-                sequential={true}
-                revealDirection="start"
-                animateOn="view"
-                characters="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+ -"
-                className="text-gray-300"
-                encryptedClassName="text-gray-600"
-              />
+              Fair airdrop distribution for all holders - Earn rewards as fast as NOW
             </p>
             
             {/* Stimulus Countdown */}

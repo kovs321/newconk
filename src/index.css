@@ -119,3 +119,25 @@ All colors MUST be HSL.
     letter-spacing: 0.05em;
   }
 }
+
+/* Shiny text animation keyframes */
+@keyframes shiny-text {
+  0%, 90%, 100% {
+    background-position: calc(-100% - var(--shiny-width)) 0;
+  }
+  30%, 60% {
+    background-position: calc(100% + var(--shiny-width)) 0;
+  }
+}
+
+/* Animation utility class with performance optimizations */
+.animate-shiny-text {
+  animation: shiny-text var(--animation-speed, 8s) infinite;
+  /* Optimize for performance */
+  will-change: background-position;
+  /* Respect user preferences for reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    background-position: 50% 0;
+  }
+}

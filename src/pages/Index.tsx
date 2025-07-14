@@ -8,6 +8,7 @@ import { Header } from '../components/Header';
 import DecryptedText from '../components/DecryptedText';
 import IkunHoldersBoard from '../components/IkunHoldersBoard';
 import StimulusCountdown from '../components/StimulusCountdown';
+import { SparklesCore } from '../components/SparklesCore';
 
 const Index = () => {
   console.log('Index component loading with BONKDROP');
@@ -18,8 +19,22 @@ const Index = () => {
       {/* Main Content */}
       <main className="pt-16">
         {/* Hero Section */}
-        <section className="py-16 px-4">
-          <div className="container mx-auto text-center">
+        <section className="py-16 px-4 relative">
+          {/* Background Sparkles */}
+          <div className="absolute inset-0 w-full h-full">
+            <SparklesCore
+              id="tsparticlesfullpage"
+              background="transparent"
+              minSize={0.6}
+              maxSize={1.4}
+              particleDensity={50}
+              className="w-full h-full"
+              particleColor="#f97316"
+              speed={2}
+            />
+          </div>
+          
+          <div className="container mx-auto text-center relative z-10">
             <div className="flex items-center justify-center mb-6">
               <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gray-800 border-2 border-orange-500 p-2 mr-4 flex items-center justify-center">
                 <img 

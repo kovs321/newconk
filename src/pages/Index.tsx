@@ -49,15 +49,33 @@ const Index = () => {
             {/* Requirements */}
             <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-8">
               <div className="bg-gray-900 border border-gray-600 rounded-lg p-6 text-center">
-                <div className="w-4 h-4 bg-orange-500 rounded-full mx-auto mb-3"></div>
+                <div className="flex justify-center mb-3">
+                  <iframe 
+                    src="https://lottie.host/embed/c49deb67-2942-4b74-b03c-8d1dd9538e84/U3OX1nU2hv.lottie"
+                    className="w-8 h-8 border-0"
+                    title="Hold Tokens Animation"
+                  />
+                </div>
                 <span className="text-gray-300 font-tech text-lg">Hold 100,000+ BONKDROP tokens</span>
               </div>
               <div className="bg-gray-900 border border-gray-600 rounded-lg p-6 text-center">
-                <div className="w-4 h-4 bg-orange-500 rounded-full mx-auto mb-3"></div>
+                <div className="flex justify-center mb-3">
+                  <iframe 
+                    src="https://lottie.host/embed/a23c6744-8fc8-4822-a290-92c9bbbc69e9/QHR9dXVn8V.lottie"
+                    className="w-8 h-8 border-0"
+                    title="Automatic Stimulus Animation"
+                  />
+                </div>
                 <span className="text-gray-300 font-tech text-lg">Automatic stimulus every 5 minutes</span>
               </div>
               <div className="bg-gray-900 border border-gray-600 rounded-lg p-6 text-center">
-                <div className="w-4 h-4 bg-orange-500 rounded-full mx-auto mb-3"></div>
+                <div className="flex justify-center mb-3">
+                  <iframe 
+                    src="https://lottie.host/embed/d9c3510f-faa8-49b5-a2d6-a2d4552ad5e5/CWfMauRdZp.lottie"
+                    className="w-8 h-8 border-0"
+                    title="Fair Distribution Animation"
+                  />
+                </div>
                 <span className="text-gray-300 font-tech text-lg">Fair distribution based on holdings</span>
               </div>
             </div>

@@ -21,7 +21,7 @@ const BonkdropLogo: React.FC<BonkdropLogoProps> = ({ className = '' }) => {
       />
       <div className="inline-flex items-center justify-center" style={{ width: '0.8em', height: '0.8em', verticalAlign: 'middle' }}>
         <img 
-          src="https://arweave.net/hQiPZOsRZXGXBJd_82PhVdlM_hACsT_q6wqwf5cSY7I" 
+          src="/photo_2025-07-15_14-14-11.jpg" 
           alt="O"
           className="w-full h-full rounded-full"
           style={{ display: 'inline-block' }}

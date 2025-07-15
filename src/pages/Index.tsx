@@ -10,7 +10,6 @@ import IkunHoldersBoard from '../components/IkunHoldersBoard';
 import StimulusCountdown from '../components/StimulusCountdown';
 import { SparklesCore } from '../components/SparklesCore';
 import BonkdropLogo from '../components/BonkdropLogo';
-import LordIcon from '../components/LordIcon';
 
 const Index = () => {
   console.log('Index component loading with BONKDROP');
@@ -61,16 +60,6 @@ const Index = () => {
                 <div className="w-4 h-4 bg-orange-500 rounded-full mx-auto mb-3"></div>
                 <span className="text-gray-300 font-tech text-lg">Fair distribution based on holdings</span>
               </div>
-            </div>
-            
-            {/* Scroll Down Indicator */}
-            <div className="flex justify-center animate-bounce mt-12">
-              <LordIcon 
-                src="https://cdn.lordicon.com/gqfozvrp.json"
-                trigger="loop"
-                style={{ width: '50px', height: '50px' }}
-                colors="primary:#ffffff,secondary:#ffffff"
-              />
             </div>
 
           </div>

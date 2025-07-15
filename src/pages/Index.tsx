@@ -61,7 +61,7 @@ const Index = () => {
               <div className="bg-gray-900 border border-gray-600 rounded-lg p-6 text-center">
                 <div className="flex justify-center mb-3">
                   <iframe 
-                    src="https://lottie.host/embed/a23c6744-8fc8-4822-a290-92c9bbbc69e9/QHR9dXVn8V.lottie"
+                    src="https://lottie.host/embed/c742fae5-6e28-47fb-83a0-dc3ed0509a09/ZdnKr1Fepf.lottie"
                     className="w-12 h-12 border-0"
                     title="Automatic Stimulus Animation"
                   />

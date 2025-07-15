@@ -73,10 +73,6 @@ const StimulusCountdown: React.FC = () => {
           </div>
         </div>
         
-        <p className="text-gray-400 font-tech text-sm mb-4">
-          Automatic rewards for holders with 100k+ BONKDROP tokens
-        </p>
-        
         {/* Coin Animation */}
         <div className="inline-flex items-center space-x-2">
           <iframe 

@@ -63,9 +63,9 @@ export const Header = () => {
                 encryptedClassName="text-gray-500"
               />
             </a>
-            <a href="#pitch" className="text-gray-300 hover:text-orange-400 transition-colors">
+            <a href="#how-it-works" className="text-gray-300 hover:text-orange-400 transition-colors">
               <DecryptedText 
-                text="Pitch Deck"
+                text="How It Works"
                 speed={80}
                 maxIterations={8}
                 sequential={true}
@@ -140,9 +140,9 @@ export const Header = () => {
                   encryptedClassName="text-gray-500"
                 />
               </a>
-              <a href="#pitch" className="block px-3 py-2 text-gray-300 hover:text-orange-400 hover:bg-gray-800 rounded-md transition-colors">
+              <a href="#how-it-works" className="block px-3 py-2 text-gray-300 hover:text-orange-400 hover:bg-gray-800 rounded-md transition-colors">
                 <DecryptedText 
-                  text="Pitch Deck"
+                  text="How It Works"
                   speed={80}
                   maxIterations={8}
                   sequential={true}

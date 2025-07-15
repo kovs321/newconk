@@ -5,13 +5,15 @@ interface LordIconProps {
   trigger?: 'hover' | 'click' | 'loop' | 'loop-on-hover' | 'morph' | 'morph-two-way';
   style?: React.CSSProperties;
   className?: string;
+  colors?: string;
 }
 
 const LordIcon: React.FC<LordIconProps> = ({ 
   src, 
   trigger = 'hover', 
   style = { width: '250px', height: '250px' },
-  className = ''
+  className = '',
+  colors
 }) => {
   useEffect(() => {
     // Load LordIcon script if not already loaded
@@ -29,6 +31,7 @@ const LordIcon: React.FC<LordIconProps> = ({
       trigger={trigger}
       style={style}
       class={className}
+      colors={colors}
     />
   );
 };
@@ -42,6 +45,7 @@ declare global {
         trigger?: string;
         style?: React.CSSProperties;
         class?: string;
+        colors?: string;
       };
     }
   }

@@ -73,17 +73,6 @@ const StimulusCountdown: React.FC = () => {
           </div>
         </div>
         
-        {/* Coin Animation */}
-        <div className="inline-flex items-center space-x-2">
-          <iframe 
-            src="https://lottie.host/embed/c49deb67-2942-4b74-b03c-8d1dd9538e84/U3OX1nU2hv.lottie"
-            className="w-5 h-5 border-0"
-            title="Live Stimulus Animation"
-          />
-          <span className="text-gray-400 font-tech text-xs uppercase tracking-wider">
-            Live Stimulus Active
-          </span>
-        </div>
       </div>
     </div>
   );

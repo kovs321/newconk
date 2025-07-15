@@ -69,6 +69,7 @@ const Index = () => {
                 src="https://cdn.lordicon.com/gqfozvrp.json"
                 trigger="loop"
                 style={{ width: '80px', height: '80px' }}
+                colors="primary:#ffffff,secondary:#ffffff"
               />
             </div>
 

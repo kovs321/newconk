@@ -118,13 +118,13 @@ const Index = () => {
           </div>
         </section>
 
-        {/* How It Works Section */}
+        {/* How To Claim Section */}
         <section id="how-it-works" className="py-12 px-4">
           <div className="container mx-auto max-w-6xl">
             <div className="bg-gray-900 border border-gray-700 rounded-lg p-8 shadow-sm">
               <h3 className="text-2xl font-black text-orange-500 mb-6 text-center font-logo tracking-wider">
                 <DecryptedText 
-                  text="How It Works"
+                  text="How To Claim"
                   speed={80}
                   maxIterations={12}
                   sequential={true}

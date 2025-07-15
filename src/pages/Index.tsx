@@ -108,7 +108,7 @@ const Index = () => {
                 />
               </h2>
               <p className="text-xl text-gray-300 font-tech">
-                Real-time price tracking and market insights
+                Real-time price tracking
               </p>
             </div>
             {/* Full Width Chart */}

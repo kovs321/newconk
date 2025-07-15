@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-import { CustomWalletButton } from './CustomWalletButton';
 import DecryptedText from './DecryptedText';
 
 export const Header = () => {
@@ -78,8 +77,8 @@ export const Header = () => {
             </a>
           </nav>
 
-          {/* Follow Us and Connect Wallet Buttons */}
-          <div className="hidden md:flex items-center space-x-3">
+          {/* Follow Us Button */}
+          <div className="hidden md:flex items-center">
             <a
               href="https://x.com/thebonkstrategy"
               target="_blank"
@@ -88,7 +87,6 @@ export const Header = () => {
             >
               Follow Us
             </a>
-            <CustomWalletButton className="bg-gray-800 text-orange-500 px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-700 hover:text-orange-400 transition-colors border-none" />
           </div>
 
           {/* Mobile Menu Button */}
@@ -155,7 +153,6 @@ export const Header = () => {
                 >
                   Follow Us
                 </a>
-                <CustomWalletButton className="bg-gray-800 text-orange-500 px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 hover:text-orange-400 transition-colors border-none w-full" />
               </div>
             </div>
           </div>

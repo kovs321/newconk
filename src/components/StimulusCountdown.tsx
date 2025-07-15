@@ -51,7 +51,7 @@ const StimulusCountdown: React.FC = () => {
         <div className="flex justify-center items-center space-x-2 mb-6">
           {/* Minutes */}
           <div className="bg-gray-800 rounded-lg p-6 min-w-[100px] border border-gray-700">
-            <div className="text-5xl font-black text-green-400 font-mono">
+            <div className="text-5xl font-black text-orange-500 font-mono">
               {formatTime(timeLeft.minutes)}
             </div>
             <div className="text-sm text-gray-500 font-tech uppercase tracking-wider mt-2">
@@ -64,7 +64,7 @@ const StimulusCountdown: React.FC = () => {
           
           {/* Seconds */}
           <div className="bg-gray-800 rounded-lg p-6 min-w-[100px] border border-gray-700">
-            <div className="text-5xl font-black text-green-400 font-mono">
+            <div className="text-5xl font-black text-orange-500 font-mono">
               {formatTime(timeLeft.seconds)}
             </div>
             <div className="text-sm text-gray-500 font-tech uppercase tracking-wider mt-2">

@@ -86,16 +86,7 @@ export const Header = () => {
               rel="noopener noreferrer"
               className="bg-gray-800 text-gray-300 px-4 py-2 rounded-full text-sm font-medium hover:bg-orange-500 hover:text-orange-400 transition-colors"
             >
-              <DecryptedText 
-                text="Follow Us"
-                speed={80}
-                maxIterations={8}
-                sequential={true}
-                revealDirection="start"
-                animateOn="hover"
-                className="text-gray-300"
-                encryptedClassName="text-gray-500"
-              />
+              Follow Us
             </a>
             <CustomWalletButton className="bg-gray-800 text-orange-500 px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-700 hover:text-orange-400 transition-colors border-none" />
           </div>
@@ -162,16 +153,7 @@ export const Header = () => {
                   rel="noopener noreferrer"
                   className="block bg-gray-800 text-gray-300 px-3 py-2 rounded-md text-sm font-medium hover:bg-orange-500 hover:text-orange-400 transition-colors text-center"
                 >
-                  <DecryptedText 
-                    text="Follow Us"
-                    speed={80}
-                    maxIterations={8}
-                    sequential={true}
-                    revealDirection="start"
-                    animateOn="hover"
-                    className="text-gray-300"
-                    encryptedClassName="text-gray-500"
-                  />
+                  Follow Us
                 </a>
                 <CustomWalletButton className="bg-gray-800 text-orange-500 px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 hover:text-orange-400 transition-colors border-none w-full" />
               </div>

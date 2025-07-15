@@ -77,15 +77,23 @@ export const Header = () => {
             </a>
           </nav>
 
-          {/* Follow Us Button */}
-          <div className="hidden md:flex items-center">
+          {/* Follow Us and RevShare Docs Buttons */}
+          <div className="hidden md:flex items-center space-x-3">
             <a
               href="https://x.com/thebonkstrategy"
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-gray-800 text-gray-300 px-4 py-2 rounded-full text-sm font-medium hover:bg-orange-500 hover:text-orange-400 transition-colors"
+              className="bg-gray-800 text-gray-300 px-4 py-2 rounded-full text-sm font-medium hover:bg-orange-500 hover:text-black transition-colors"
             >
               Follow Us
+            </a>
+            <a
+              href="https://revshare.dev/docs"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-gray-800 text-gray-300 px-4 py-2 rounded-full text-sm font-medium hover:bg-orange-500 hover:text-black transition-colors"
+            >
+              RevShare Docs
             </a>
           </div>
 
@@ -149,9 +157,17 @@ export const Header = () => {
                   href="https://x.com/thebonkstrategy"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block bg-gray-800 text-gray-300 px-3 py-2 rounded-md text-sm font-medium hover:bg-orange-500 hover:text-orange-400 transition-colors text-center"
+                  className="block bg-gray-800 text-gray-300 px-3 py-2 rounded-md text-sm font-medium hover:bg-orange-500 hover:text-black transition-colors text-center"
                 >
                   Follow Us
+                </a>
+                <a
+                  href="https://revshare.dev/docs"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block bg-gray-800 text-gray-300 px-3 py-2 rounded-md text-sm font-medium hover:bg-orange-500 hover:text-black transition-colors text-center"
+                >
+                  RevShare Docs
                 </a>
               </div>
             </div>

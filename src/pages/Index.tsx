@@ -52,7 +52,7 @@ const Index = () => {
                 <div className="flex justify-center mb-3">
                   <iframe 
                     src="https://lottie.host/embed/c49deb67-2942-4b74-b03c-8d1dd9538e84/U3OX1nU2hv.lottie"
-                    className="w-8 h-8 border-0"
+                    className="w-12 h-12 border-0"
                     title="Hold Tokens Animation"
                   />
                 </div>
@@ -72,7 +72,7 @@ const Index = () => {
                 <div className="flex justify-center mb-3">
                   <iframe 
                     src="https://lottie.host/embed/d9c3510f-faa8-49b5-a2d6-a2d4552ad5e5/CWfMauRdZp.lottie"
-                    className="w-8 h-8 border-0"
+                    className="w-12 h-12 border-0"
                     title="Fair Distribution Animation"
                   />
                 </div>

@@ -64,11 +64,11 @@ const Index = () => {
             </div>
             
             {/* Scroll Down Indicator */}
-            <div className="flex justify-center animate-bounce">
+            <div className="flex justify-center animate-bounce mt-12">
               <LordIcon 
                 src="https://cdn.lordicon.com/gqfozvrp.json"
                 trigger="loop"
-                style={{ width: '80px', height: '80px' }}
+                style={{ width: '50px', height: '50px' }}
                 colors="primary:#ffffff,secondary:#ffffff"
               />
             </div>

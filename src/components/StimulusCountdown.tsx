@@ -1,43 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import DecryptedText from './DecryptedText';
 
 const StimulusCountdown: React.FC = () => {
-  const [timeLeft, setTimeLeft] = useState({ minutes: 5, seconds: 0 });
-  const [isActive, setIsActive] = useState(true);
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-
-    if (isActive) {
-      interval = setInterval(() => {
-        setTimeLeft(prevTime => {
-          if (prevTime.minutes === 0 && prevTime.seconds === 0) {
-            // Reset to 5 minutes when countdown reaches 0
-            return { minutes: 5, seconds: 0 };
-          } else if (prevTime.seconds === 0) {
-            return { minutes: prevTime.minutes - 1, seconds: 59 };
-          } else {
-            return { ...prevTime, seconds: prevTime.seconds - 1 };
-          }
-        });
-      }, 1000);
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isActive]);
-
-  const formatTime = (time: number) => {
-    return time.toString().padStart(2, '0');
-  };
-
   return (
     <div className="max-w-2xl mx-auto mb-12">
       <div className="text-center">
         <h3 className="text-2xl font-bold text-gray-300 mb-6 font-tech uppercase tracking-wider">
           <DecryptedText 
-            text="Next Stimulus Airdrop In"
+            text="Airdrop Every 5 Minutes"
             speed={80}
             maxIterations={10}
             sequential={true}
@@ -48,27 +18,14 @@ const StimulusCountdown: React.FC = () => {
           />
         </h3>
         
-        <div className="flex justify-center items-center space-x-2 mb-6">
-          {/* Minutes */}
-          <div className="bg-gray-800 rounded-lg p-6 min-w-[100px] border border-gray-700">
+        <div className="flex justify-center items-center mb-6">
+          {/* Static 5 mins display */}
+          <div className="bg-gray-800 rounded-lg p-6 min-w-[150px] border border-gray-700">
             <div className="text-5xl font-black text-orange-500 font-mono">
-              {formatTime(timeLeft.minutes)}
+              5 mins
             </div>
             <div className="text-sm text-gray-500 font-tech uppercase tracking-wider mt-2">
-              Minutes
-            </div>
-          </div>
-          
-          {/* Colon */}
-          <div className="text-4xl font-black text-gray-500">:</div>
-          
-          {/* Seconds */}
-          <div className="bg-gray-800 rounded-lg p-6 min-w-[100px] border border-gray-700">
-            <div className="text-5xl font-black text-orange-500 font-mono">
-              {formatTime(timeLeft.seconds)}
-            </div>
-            <div className="text-sm text-gray-500 font-tech uppercase tracking-wider mt-2">
-              Seconds
+              Interval
             </div>
           </div>
         </div>

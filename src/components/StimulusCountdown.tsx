@@ -7,28 +7,10 @@ const StimulusCountdown: React.FC = () => {
       <div className="text-center">
         <div className="mb-6">
           <h3 className="text-2xl font-bold text-gray-300 mb-4 font-tech uppercase tracking-wider">
-            <DecryptedText 
-              text="Unlike pumpfun, we are actually doing an airdrop."
-              speed={80}
-              maxIterations={10}
-              sequential={true}
-              revealDirection="center"
-              animateOn="view"
-              className="text-gray-300"
-              encryptedClassName="text-gray-600"
-            />
+            Unlike pumpfun, we are actually doing an airdrop.
           </h3>
           <p className="text-xl text-gray-400 font-tech">
-            <DecryptedText 
-              text="Hold $BONKDROP & to receive a BONK airdrop"
-              speed={80}
-              maxIterations={10}
-              sequential={true}
-              revealDirection="center"
-              animateOn="view"
-              className="text-gray-400"
-              encryptedClassName="text-gray-600"
-            />
+            Hold $BONKDROP & to receive a BONK airdrop
           </p>
         </div>
         

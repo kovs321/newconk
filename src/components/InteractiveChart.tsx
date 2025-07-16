@@ -15,7 +15,6 @@ interface TokenInfo {
   currentPrice: number | null;
   priceDirection: 'up' | 'down' | null;
   status: 'active' | 'error' | 'loading';
-  priceChange24h: number | null;
 }
 
 interface TokenData {
@@ -46,8 +45,7 @@ const InteractiveChart: React.FC = () => {
     logo: 'https://arweave.net/hQiPZOsRZXGXBJd_82PhVdlM_hACsT_q6wqwf5cSY7I',
     currentPrice: null,
     priceDirection: null,
-    status: 'loading',
-    priceChange24h: null
+    status: 'loading'
   });
 
   const SOLANA_TRACKER_API_KEY = '4be0cb55-c2d4-4fdc-a15d-75a14e5c0029';
@@ -105,66 +103,10 @@ const InteractiveChart: React.FC = () => {
     }
   };
 
-  // Fetch full token information including 24h price change
-  const fetchTokenFullInfo = async (tokenMint: string) => {
-    try {
-      console.log('🚀 Fetching full BONK token information...');
-      const response = await fetch(
-        `https://data.solanatracker.io/tokens/${tokenMint}`,
-        {
-          headers: {
-            'x-api-key': SOLANA_TRACKER_API_KEY,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        console.log(`❌ API Error fetching token info: ${response.status}`);
-        return null;
-      }
-
-      const result = await response.json();
-      console.log('📦 Full token data:', result);
-      
-      // Extract 24h price change from events - try multiple possible paths
-      let priceChange24h = null;
-      
-      // Try different possible response structures
-      if (result.events?.['24h']?.priceChangePercentage !== undefined) {
-        priceChange24h = result.events['24h'].priceChangePercentage;
-      } else if (result.events?.['1d']?.priceChangePercentage !== undefined) {
-        priceChange24h = result.events['1d'].priceChangePercentage;
-      } else if (result.token?.priceChange24h !== undefined) {
-        priceChange24h = result.token.priceChange24h;
-      } else if (result.priceChange24h !== undefined) {
-        priceChange24h = result.priceChange24h;
-      }
-      
-      console.log('📈 24h price change found:', priceChange24h);
-      
-      return {
-        priceChange24h,
-        tokenData: result.token,
-        pools: result.pools
-      };
-    } catch (err) {
-      console.error('💥 Error fetching full token info:', err);
-      return null;
-    }
-  };
-
   // Load token metadata for BONK
   const loadTokenMetadata = async () => {
     console.log('🚀 Loading BONK token metadata...');
-    
-    // Fetch full token information including 24h price change
-    const fullInfo = await fetchTokenFullInfo(tokenInfo.mint);
-    if (fullInfo) {
-      setTokenInfo(prev => ({
-        ...prev,
-        priceChange24h: fullInfo.priceChange24h
-      }));
-    }
+    // Just loading metadata, no need for additional API calls
   };
   
   // Generate sample data
@@ -357,11 +299,7 @@ const InteractiveChart: React.FC = () => {
     try {
       setIsUpdating(true);
       
-      // Fetch both chart data and token info
-      const [bonkData, fullInfo] = await Promise.all([
-        fetchBonkData(),
-        fetchTokenFullInfo(tokenInfo.mint)
-      ]);
+      const bonkData = await fetchBonkData();
       
       if (bonkData.length > 0) {
         // Update chart data - the useEffect will handle updating the series
@@ -380,13 +318,12 @@ const InteractiveChart: React.FC = () => {
         }
         setCurrentPrice(latestPrice);
         
-        // Update token info including 24h change
+        // Update token info
         setTokenInfo(prev => ({
           ...prev,
           currentPrice: latestPrice,
           priceDirection: latestPrice > (prev.currentPrice || 0) ? 'up' : 'down',
-          status: 'active' as const,
-          priceChange24h: fullInfo?.priceChange24h ?? prev.priceChange24h
+          status: 'active' as const
         }));
         
         // Reset token direction after animation
@@ -607,21 +544,6 @@ const InteractiveChart: React.FC = () => {
             <div>
               <div className="text-lg font-bold text-orange-500">{tokenInfo.name}</div>
               <div className="text-sm text-gray-400">{tokenInfo.symbol}</div>
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-xs text-gray-400 mb-1">24h Change</div>
-            <div className={`text-sm font-bold ${
-              tokenInfo.priceChange24h !== null 
-                ? tokenInfo.priceChange24h >= 0 
-                  ? 'text-green-500' 
-                  : 'text-red-500'
-                : 'text-gray-400'
-            }`}>
-              {tokenInfo.priceChange24h !== null 
-                ? `${tokenInfo.priceChange24h >= 0 ? '+' : ''}${tokenInfo.priceChange24h.toFixed(2)}%`
-                : 'N/A'
-              }
             </div>
           </div>
         </div>

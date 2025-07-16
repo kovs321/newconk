@@ -9,7 +9,6 @@ import DecryptedText from '../components/DecryptedText';
 import StimulusCountdown from '../components/StimulusCountdown';
 import { SparklesCore } from '../components/SparklesCore';
 import BonkdropLogo from '../components/BonkdropLogo';
-import BonkdropHoldersBoard from '../components/IkunHoldersBoard';
 
 const Index = () => {
   console.log('Index component loading with BONKDROP');
@@ -80,32 +79,6 @@ const Index = () => {
               </div>
             </div>
 
-          </div>
-        </section>
-
-        {/* Growing Community Section */}
-        <section className="py-16 px-4 bg-gray-900">
-          <div className="container mx-auto max-w-6xl">
-            <div className="text-center mb-8">
-              <h2 className="text-4xl font-black text-orange-500 mb-4 font-logo tracking-wider">
-                <DecryptedText 
-                  text="Growing Community"
-                  speed={70}
-                  maxIterations={10}
-                  sequential={true}
-                  revealDirection="center"
-                  animateOn="view"
-                  className="text-orange-500"
-                  encryptedClassName="text-gray-500"
-                />
-              </h2>
-              <p className="text-xl text-gray-300 font-tech">
-                Real-time tracking of BONKDROP holders in our ecosystem
-              </p>
-            </div>
-            <div className="bg-black border border-gray-600 rounded-lg p-6">
-              <BonkdropHoldersBoard />
-            </div>
           </div>
         </section>
 

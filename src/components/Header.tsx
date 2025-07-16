@@ -80,7 +80,7 @@ export const Header = () => {
           {/* Follow Us and RevShare Docs Buttons */}
           <div className="hidden md:flex items-center space-x-3">
             <a
-              href="https://x.com/thebonkstrategy"
+              href="https://x.com/bonkdrop_fun"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-gray-800 text-gray-300 px-4 py-2 rounded-full text-sm font-medium hover:bg-orange-500 hover:text-black transition-colors"
@@ -154,7 +154,7 @@ export const Header = () => {
               </a>
               <div className="px-3 py-2 space-y-2">
                 <a
-                  href="https://x.com/thebonkstrategy"
+                  href="https://x.com/bonkdrop_fun"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block bg-gray-800 text-gray-300 px-3 py-2 rounded-md text-sm font-medium hover:bg-orange-500 hover:text-black transition-colors text-center"

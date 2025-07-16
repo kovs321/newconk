@@ -66,8 +66,8 @@ const IkunHoldersBoard: React.FC = () => {
   useEffect(() => {
     fetchIkunHolders();
     
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchIkunHolders, 30000);
+    // Refresh every 5 seconds
+    const interval = setInterval(fetchIkunHolders, 5000);
     
     return () => clearInterval(interval);
   }, []);
@@ -263,7 +263,7 @@ const IkunHoldersBoard: React.FC = () => {
 
       {/* Footer */}
       <div className="text-center text-sm text-gray-400 mt-4">
-        Data updates every 30 seconds • Scroll to see more holders
+        Data updates every 5 seconds • Scroll to see more holders
       </div>
     </div>
   );

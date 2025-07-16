@@ -16,23 +16,23 @@ interface HoldersResponse {
   accounts: TokenHolder[];
 }
 
-const IkunHoldersBoard: React.FC = () => {
+const BonkdropHoldersBoard: React.FC = () => {
   const [holders, setHolders] = useState<TokenHolder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalHolders, setTotalHolders] = useState<number>(0);
 
   const SOLANA_TRACKER_API_KEY = '4be0cb55-c2d4-4fdc-a15d-75a14e5c0029';
-  const IKUN_TOKEN_ADDRESS = 'AtortPA9SVbkKmdzu5zg4jxgkR4howvPshorA9jYbonk'; // IKUN token address
+  const BONKDROP_TOKEN_ADDRESS = 'BonkaJUMZpzRpkWAJ5RmCGzKXGRKn4bVbsXK85yVMm1H'; // BONKDROP token address
 
-  const fetchIkunHolders = async () => {
+  const fetchBonkdropHolders = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      console.log('Fetching IKUN holders...');
+      console.log('Fetching BONKDROP holders...');
       const response = await fetch(
-        `https://data.solanatracker.io/tokens/${IKUN_TOKEN_ADDRESS}/holders`,
+        `https://data.solanatracker.io/tokens/${BONKDROP_TOKEN_ADDRESS}/holders`,
         {
           headers: {
             'x-api-key': SOLANA_TRACKER_API_KEY,
@@ -45,7 +45,7 @@ const IkunHoldersBoard: React.FC = () => {
       }
 
       const data: HoldersResponse = await response.json();
-      console.log('IKUN holders response:', data);
+      console.log('BONKDROP holders response:', data);
       
       // Filter holders with more than 100,000 tokens
       const eligibleHolders = data.accounts.filter(holder => holder.amount >= 100000);
@@ -53,10 +53,10 @@ const IkunHoldersBoard: React.FC = () => {
       setHolders(eligibleHolders);
       setTotalHolders(data.total);
       
-      console.log(`Found ${eligibleHolders.length} eligible holders with 100k+ IKUN tokens`);
+      console.log(`Found ${eligibleHolders.length} eligible holders with 100k+ BONKDROP tokens`);
       
     } catch (err) {
-      console.error('Error fetching IKUN holders:', err);
+      console.error('Error fetching BONKDROP holders:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch holders data');
     } finally {
       setLoading(false);
@@ -64,10 +64,10 @@ const IkunHoldersBoard: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchIkunHolders();
+    fetchBonkdropHolders();
     
     // Refresh every 5 seconds
-    const interval = setInterval(fetchIkunHolders, 5000);
+    const interval = setInterval(fetchBonkdropHolders, 5000);
     
     return () => clearInterval(interval);
   }, []);
@@ -99,7 +99,7 @@ const IkunHoldersBoard: React.FC = () => {
       <div className="flex items-center justify-center py-8">
         <div className="flex items-center space-x-3">
           <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-gray-300">Loading IKUN holders...</span>
+          <span className="text-gray-300">Loading BONKDROP holders...</span>
         </div>
       </div>
     );
@@ -112,7 +112,7 @@ const IkunHoldersBoard: React.FC = () => {
           <p className="text-red-300">Error: {error}</p>
         </div>
         <button
-          onClick={fetchIkunHolders}
+          onClick={fetchBonkdropHolders}
           className="bg-gray-800 text-orange-500 px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
         >
           Retry
@@ -170,7 +170,7 @@ const IkunHoldersBoard: React.FC = () => {
               </th>
               <th className="text-right py-3 px-4 text-orange-500 font-tech uppercase tracking-wider">
                 <DecryptedText 
-                  text="IKUN Tokens"
+                  text="BONKDROP Tokens"
                   speed={80}
                   maxIterations={8}
                   sequential={true}
@@ -252,7 +252,7 @@ const IkunHoldersBoard: React.FC = () => {
             ) : (
               <tr>
                 <td colSpan={5} className="py-8 text-center text-gray-400">
-                  No holders found with 100,000+ IKUN tokens
+                  No holders found with 100,000+ BONKDROP tokens
                 </td>
               </tr>
             )}
@@ -269,4 +269,4 @@ const IkunHoldersBoard: React.FC = () => {
   );
 };
 
-export default IkunHoldersBoard;
+export default BonkdropHoldersBoard;

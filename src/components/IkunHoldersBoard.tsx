@@ -223,9 +223,14 @@ const IkunHoldersBoard: React.FC = () => {
                     </div>
                   </td>
                   <td className="py-3 px-4">
-                    <span className="font-mono text-gray-300 hover:text-orange-400 transition-colors cursor-pointer">
+                    <a
+                      href={`https://solscan.io/account/${holder.wallet}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-gray-300 hover:text-orange-400 transition-colors cursor-pointer"
+                    >
                       {formatWalletAddress(holder.wallet)}
-                    </span>
+                    </a>
                   </td>
                   <td className="py-3 px-4 text-right">
                     <span className="font-bold text-orange-500">

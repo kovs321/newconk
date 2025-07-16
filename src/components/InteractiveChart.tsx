@@ -157,13 +157,13 @@ const InteractiveChart: React.FC = () => {
   // Generate sample data
   const generateSampleData = (): ChartData[] => {
     const data: ChartData[] = [];
-    let price = 0.000001174;
+    let price = 0.000023; // More realistic BONK price around $0.000023
     const now = Math.floor(Date.now() / 1000);
     
     for (let i = 100; i >= 0; i--) {
       const time = now - (i * 60); // 1 minute intervals
-      const change = (Math.random() - 0.5) * 0.02;
-      price = Math.max(price + change, 0.000000001);
+      const change = (Math.random() - 0.5) * 0.000001; // Smaller price changes
+      price = Math.max(price + change, 0.000001);
       
       data.push({
         time,
@@ -192,22 +192,28 @@ const InteractiveChart: React.FC = () => {
       }
 
       const result = await response.json();
+      console.log('Raw OHLC API response:', result);
       
       let tokenData: TokenData[] = [];
       
       if (result.oclhv && Array.isArray(result.oclhv)) {
         tokenData = result.oclhv
           .filter((item: any) => item && item.time && item.close)
-          .map((item: any) => ({
-            time: item.time,
-            close: item.close,
-            open: item.open || item.close,
-            high: item.high || item.close,
-            low: item.low || item.close,
-            volume: item.volume || 0,
-          }))
+          .map((item: any) => {
+            console.log('Processing price data point:', item);
+            return {
+              time: item.time,
+              close: item.close,
+              open: item.open || item.close,
+              high: item.high || item.close,
+              low: item.low || item.close,
+              volume: item.volume || 0,
+            };
+          })
           .sort((a, b) => a.time - b.time);
       }
+      
+      console.log('Processed token data:', tokenData.slice(-3)); // Log last 3 points
 
       return tokenData;
     } catch (err) {
@@ -494,7 +500,18 @@ const InteractiveChart: React.FC = () => {
 
   const formatPrice = (price: number | null) => {
     if (price === null) return '--';
-    return price.toFixed(6);
+    // BONK price should be very small (around 0.00002-0.00003)
+    // If price is unreasonably high, it might be inverted or in wrong units
+    if (price > 1) {
+      console.warn('Price seems too high for BONK token:', price);
+      // Try inverting the price if it seems too high
+      const invertedPrice = 1 / price;
+      if (invertedPrice > 0.00001 && invertedPrice < 0.001) {
+        console.log('Using inverted price:', invertedPrice);
+        return invertedPrice.toFixed(8);
+      }
+    }
+    return price.toFixed(8);
   };
 
   if (loading) {

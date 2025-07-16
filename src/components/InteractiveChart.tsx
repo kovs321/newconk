@@ -126,8 +126,21 @@ const InteractiveChart: React.FC = () => {
       const result = await response.json();
       console.log('📦 Full token data:', result);
       
-      // Extract 24h price change from events
-      const priceChange24h = result.events?.['24h']?.priceChangePercentage ?? null;
+      // Extract 24h price change from events - try multiple possible paths
+      let priceChange24h = null;
+      
+      // Try different possible response structures
+      if (result.events?.['24h']?.priceChangePercentage !== undefined) {
+        priceChange24h = result.events['24h'].priceChangePercentage;
+      } else if (result.events?.['1d']?.priceChangePercentage !== undefined) {
+        priceChange24h = result.events['1d'].priceChangePercentage;
+      } else if (result.token?.priceChange24h !== undefined) {
+        priceChange24h = result.token.priceChange24h;
+      } else if (result.priceChange24h !== undefined) {
+        priceChange24h = result.priceChange24h;
+      }
+      
+      console.log('📈 24h price change found:', priceChange24h);
       
       return {
         priceChange24h,
@@ -201,12 +214,29 @@ const InteractiveChart: React.FC = () => {
           .filter((item: any) => item && item.time && item.close)
           .map((item: any) => {
             console.log('Processing price data point:', item);
+            
+            // Fix inverted prices - BONK should be around 0.00002-0.00003
+            let close = item.close;
+            let open = item.open || close;
+            let high = item.high || close;
+            let low = item.low || close;
+            
+            // If prices seem too high, invert them
+            if (close > 1) {
+              console.log('Inverting price data point - close was:', close);
+              close = 1 / close;
+              open = 1 / open;
+              high = 1 / high;
+              low = 1 / low;
+              console.log('Inverted close price:', close);
+            }
+            
             return {
               time: item.time,
-              close: item.close,
-              open: item.open || item.close,
-              high: item.high || item.close,
-              low: item.low || item.close,
+              close: close,
+              open: open,
+              high: high,
+              low: low,
               volume: item.volume || 0,
             };
           })
@@ -500,17 +530,7 @@ const InteractiveChart: React.FC = () => {
 
   const formatPrice = (price: number | null) => {
     if (price === null) return '--';
-    // BONK price should be very small (around 0.00002-0.00003)
-    // If price is unreasonably high, it might be inverted or in wrong units
-    if (price > 1) {
-      console.warn('Price seems too high for BONK token:', price);
-      // Try inverting the price if it seems too high
-      const invertedPrice = 1 / price;
-      if (invertedPrice > 0.00001 && invertedPrice < 0.001) {
-        console.log('Using inverted price:', invertedPrice);
-        return invertedPrice.toFixed(8);
-      }
-    }
+    // Since we now fix prices at the data source level, just format normally
     return price.toFixed(8);
   };
 
@@ -600,7 +620,7 @@ const InteractiveChart: React.FC = () => {
             }`}>
               {tokenInfo.priceChange24h !== null 
                 ? `${tokenInfo.priceChange24h >= 0 ? '+' : ''}${tokenInfo.priceChange24h.toFixed(2)}%`
-                : '--'
+                : 'N/A'
               }
             </div>
           </div>
